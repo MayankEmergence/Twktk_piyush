@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TWKTK://WORLDLINE — Enter The Festival</title>
+<meta name="description" content="TWKTK virtual festival world. Verify your ticket, descend into your city, ride the shuttle, explore the secret venue before the night happens.">
+<meta name="theme-color" content="#030304">
+
+<link rel="icon" type="image/png" href="/assets/brand/logo.png">
+<link rel="apple-touch-icon" href="/assets/brand/logo.png">
+
+
+
+
+</head>
+<body>
+<div id="app"></div>
+<div class="scan"></div><div class="vig"></div>
+<div id="fade"></div><div id="flash"></div>
+
+<!-- CITY SELECT (landing) -->
+<div class="ov warm" id="citySel">
+  <div class="panel warm">
+    <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+    <div class="wl-logo"><span class="wordmark lg"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></span><small>WORLDLINE · EXPERIENCE THE NIGHT BEFORE THE NIGHT</small></div>
+    <div class="ph-eyebrow">Golden Hour — Choose Your City</div>
+    <div class="ph-title">Where Does Your Night Begin?</div>
+    <p class="ph-sub">Three cities glowing in the sunset. One secret destination. Your descent begins in orbit.</p>
+    <div class="cities">
+      <button class="citycard" data-city="mumbai">
+        <div class="cc-name">MUMBAI</div><div class="cc-date">DATE TO BE ANNOUNCED</div>
+        <div class="cc-info">Marine Drive → Gateway → Nariman Pt → Sea Link → Worli → BKC</div>
+      </button>
+      <button class="citycard" data-city="delhi">
+        <div class="cc-name">DELHI</div><div class="cc-date">SAT · 31 OCT 2026</div>
+        <div class="cc-info">India Gate → CP → Lodhi Rd → Qutub → Hauz Khas → Aerocity</div>
+      </button>
+      <button class="citycard" data-city="bangalore">
+        <div class="cc-name">BANGALORE</div><div class="cc-date">SUN · 01 NOV 2026</div>
+        <div class="cc-info">MG Road → Cubbon → Vidhana Soudha → UB City → Church St → E-City</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY CHOICE -->
+<div class="ov warm hide" id="entry">
+  <div class="entry-wrap">
+    <div class="wordmark md" style="margin-bottom:1.4rem"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></div>
+    <div class="en-eye">— You Have Arrived —</div>
+    <h2>The Doors Are Open</h2>
+    <p class="en-sub">Bass bleeding through the fog. Beyond this point, the real world ends.</p>
+    <div class="echoice">
+      <button class="ecard enter" id="goEnter"><span class="shine"></span>
+        <div class="ec-k">OPTION 01</div>
+        <h3>Enter The Experience</h3>
+        <p>Walk through the doors into the TWKTK universe — the floor, the stage, the lasers, the unknown.</p>
+        <span class="ec-cta">Walk In →</span>
+      </button>
+      <button class="ecard boxo" id="goBox"><span class="shine"></span>
+        <div class="ec-k">OPTION 02</div>
+        <h3>Box Office</h3>
+        <p>Secure your access for the real night. General Access, Fan Pit, or the full VIP treatment.</p>
+        <span class="ec-cta">View Tickets →</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BOX OFFICE -->
+<div class="ov warm hide" id="boxOffice">
+  <div class="bo-wrap">
+    <div class="wordmark md" style="margin-bottom:1rem"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></div>
+    <div class="ph-eyebrow">Box Office</div>
+    <div class="ph-title" id="boCity">MUMBAI</div>
+    <div id="boDate" style="font-size:.62rem;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;margin-bottom:.6rem">DATES ANNOUNCED PER CITY</div>
+    <div class="bo-steps"><i class="on"></i><i></i><i></i><i></i></div>
+    <!-- step 1: city + category -->
+    <div class="bo-pane on" id="boPane1">
+      <div class="bo-city-chips">
+        <button class="bo-chip" data-bc="mumbai">Mumbai</button>
+        <button class="bo-chip" data-bc="delhi">Delhi</button>
+        <button class="bo-chip" data-bc="bangalore">Bangalore</button>
+      </div>
+      <p class="ph-sub" style="margin:0 auto;max-width:480px">Pick your access. Prices update with the city.</p>
+      <div class="tickets" id="ticketGrid"></div>
+    </div>
+    <!-- step 2: booking details + quantity + live total -->
+    <div class="bo-pane" id="boPane2">
+      <div class="bo-form">
+        <label for="boName">Full Name *</label>
+        <input id="boName" type="text" maxlength="60" autocomplete="name">
+        <label for="boPhone">Mobile Number (Indian) *</label>
+        <input id="boPhone" type="tel" maxlength="14" autocomplete="tel" placeholder="98XXXXXXXX">
+        <label for="boEmail">Your signed-in email — ticket confirmation sent here</label>
+        <input id="boEmail" type="email" maxlength="254" autocomplete="email" readonly>
+        <label>Quantity</label>
+        <div class="qty-row">
+          <button class="qty-btn" id="qtyMinus">−</button>
+          <span id="qtyVal">1</span>
+          <button class="qty-btn" id="qtyPlus">+</button>
+          <span style="font-size:.58rem;color:var(--grey);letter-spacing:.16em">MAX 6</span>
+        </div>
+        <div class="bo-total"><span class="tt" id="totLabel">GENERAL ACCESS × 1</span><span class="tv" id="totVal">₹1,999</span></div>
+        <div id="boDetailMsg" class="bo-err"></div>
+      </div>
+      <div class="bo-nav">
+        <button class="btn ghost" id="boBack2">← Categories</button>
+        <button class="btn" id="boPay">Proceed To Payment →</button>
+      </div>
+    </div>
+    <!-- step 3: UPI payment + screenshot upload -->
+    <div class="bo-pane" id="boPane3">
+      <!-- Razorpay (shown only when the server reports payments enabled) -->
+      <div id="rzpBox" style="display:none;text-align:center">
+        <div class="upi-info" style="margin:0 auto 1rem">
+          PAY SECURELY · UPI · CARDS · NETBANKING · WALLETS<br>
+          AMOUNT — <b id="rzpAmt">₹0</b>
+        </div>
+        <div class="bo-nav">
+          <button class="btn ghost" id="boBack3r">← Details</button>
+          <button class="btn" id="rzpPay">Pay Securely →</button>
+        </div>
+        <div id="rzpMsg" class="bo-err"></div>
+        <div class="hint">Instant confirmation · powered by Razorpay</div>
+
+      </div>
+
+    </div>
+    <!-- step 4: submitted -->
+    <div class="bo-pane" id="boPane4" style="text-align:center">
+      <div class="bo-done-ic">✓</div>
+      <div class="ph-title" style="margin:.6rem 0" id="bkDoneTitle">Booking Submitted Successfully</div>
+      <p class="ph-sub" style="max-width:460px;margin:0 auto 1rem" id="bkDoneMsg">
+        Thank you for booking your TWKTK experience.<br><br>
+        Our sales team will verify your payment and send your ticket(s) to your
+        registered email address shortly.<br><br>
+        You will also be contacted on your registered mobile number if required.<br><br>
+        Thank you.</p>
+      <div class="cb-id" id="bkDoneId" style="font-family:var(--fc);font-size:1.2rem;color:var(--gold)"></div>
+      <div class="bo-nav"><button class="btn" id="boDone">Back To The Floor →</button></div>
+    </div>
+    <div id="boxMsg"></div>
+    <div class="bo-foot">
+      <button class="btn ghost" id="boxBack">← Back</button>
+      <button class="btn" id="boxEnter">Enter The Experience →</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div class="ov hide" id="loader">
+  <div class="panel">
+    <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+    <div class="wordmark md" style="margin-bottom:1.2rem"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></div>
+    <div class="ph-eyebrow">Constructing Reality</div>
+    <div class="ph-title" id="loadTitle">Decrypting World</div>
+    <div class="bar"><i id="loadBar"></i></div>
+    <div id="loadTxt">initialising…</div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <div class="hud-logo"><img id="hudLogo" src="assets/brand/logo.png" alt="TWKTK" style="height:30px;display:block"
+     >
+      <span id="hudWm" class="wordmark sm" style="display:none"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></span></div>
+    <div class="hud-right">
+      <span class="hud-chip">ZONES <span id="zoneCount">0/15</span></span>
+      <div id="dirWrap">
+        <button class="hud-chip" id="dirChip">DIRECTORY ▾</button>
+        <div id="dirPanel"><div class="dp-head">Experience Directory</div></div>
+      </div>
+      <button class="hud-chip" id="mapChip">MAP [M]</button>
+      <button class="hud-chip" id="sndChip">SND ON</button>
+      <button class="hud-chip" id="qChip">FX AUTO</button>
+      <button class="hud-chip" id="helpChip">?</button>
+    </div>
+  </div>
+  <div id="zoneBanner"><div class="zb-eye">— ZONE DISCOVERED —</div><div class="zb-name"></div></div>
+  <div id="prompt"><span class="key">E</span><span class="lbl"></span></div>
+  <div id="toast"></div>
+  <div id="caption"><div class="cp-eye">◉ PASSING</div><div class="cp-name"></div></div>
+  <button id="skipBtn">Skip Sequence »</button>
+  <div class="ctl-hint" id="ctlHint">WASD MOVE · DRAG LOOK · E INTERACT · SHIFT RUN</div>
+</div>
+<div id="joy"><div id="joyStick"></div></div>
+<button id="actBtn">ACT</button>
+<button class="mbtn" id="sprintBtn">RUN</button>
+<button class="mbtn" id="mapBtn">MAP</button>
+
+<!-- ETA bar (shuttle) -->
+<div id="etaBar">
+  <span>NEXT <b id="etaNext">—</b></span><span class="sep">|</span>
+  <span>DIST <b id="etaDist">—</b></span><span class="sep">|</span>
+  <span>ETA <b id="etaTime">—</b></span><span class="sep">|</span>
+  <span>TRIP <b id="etaPct">0%</b></span>
+</div>
+
+<!-- minimap -->
+<div id="minimap"><canvas id="mmCanvas" width="296" height="296"></canvas><span class="mm-hint">M — FULL MAP</span></div>
+
+<!-- fullscreen map -->
+<div id="bigMap">
+  <h3>VENUE MAP <b>· CLICK TO TELEPORT</b></h3>
+  <canvas id="mapCanvas" width="1000" height="560"></canvas>
+  <div class="bm-hint">M / ESC — CLOSE</div>
+</div>
+
+<!-- onboarding guide -->
+<div class="ov hide" id="guide">
+  <div class="guide-box">
+    <div class="wordmark md"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></div>
+    <div class="ph-eyebrow" style="margin-top:1rem">Operative Briefing — How To Move</div>
+    <div class="guide-cols">
+      <div class="gcol"><h4>Desktop</h4>
+        <div class="gk"><span class="key">W A S D</span> Move</div>
+        <div class="gk"><span class="key">MOUSE DRAG</span> Look around</div>
+        <div class="gk"><span class="key">SHIFT</span> Sprint</div>
+        <div class="gk"><span class="key">E</span> Interact</div>
+        <div class="gk"><span class="key">M</span> Venue map</div>
+        <div class="gk"><span class="key">ESC</span> Menu</div>
+      </div>
+      <div class="gcol"><h4>Mobile</h4>
+        <div class="gk"><span class="key">LEFT STICK</span> Move</div>
+        <div class="gk"><span class="key">RIGHT DRAG</span> Camera</div>
+        <div class="gk"><span class="key">ACT</span> Interact</div>
+        <div class="gk"><span class="key">RUN</span> Sprint</div>
+        <div class="gk"><span class="key">MAP</span> Venue map + teleport</div>
+        <div class="gk"><span class="key">DIRECTORY</span> Fast travel</div>
+      </div>
+    </div>
+    <div class="guide-foot">
+      <button class="btn" id="guideGo">Enter The Floor →</button>
+      <button class="btn ghost" id="guideSkip">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- esc menu -->
+<div class="ov hide" id="escMenu">
+  <div class="guide-box">
+    <div class="wordmark md" style="margin-bottom:1.2rem"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></div>
+    <button class="mrow" id="emResume">Resume</button>
+    <button class="mrow" id="emMap">Venue Map</button>
+    <button class="mrow" id="emGuide">Controls Guide</button>
+    <button class="mrow" id="emWard">Wardrobe</button>
+    <button class="mrow" id="emLb">Arcade Leaderboard</button>
+    <button class="mrow" id="emBox">Box Office</button>
+    <button class="mrow" id="emAcct">My Account</button>
+  </div>
+</div>
+
+<!-- my account -->
+<div class="ov hide" id="acctOv">
+  <div class="guide-box" style="max-width:520px">
+    <div class="wordmark md" style="margin-bottom:1rem"><span class="wm-1">Those Who Know</span><span class="wm-2">They Know</span></div>
+    <div class="ph-eyebrow">My Account</div>
+    <div id="acctProfile" style="font-size:.74rem;line-height:2;color:var(--chrome);margin-bottom:1rem"></div>
+    <div class="ph-eyebrow">My Bookings</div>
+    <div id="acctBookings" style="max-height:34vh;overflow-y:auto;font-size:.68rem;line-height:1.9"></div>
+    <div class="guide-foot" style="margin-top:1.2rem">
+      <button class="btn ghost" id="acctClose">Close</button>
+      <button class="btn" id="acctLogout">Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- arcade -->
+<div id="gameOv">
+  <h3 id="gameTitle">TWKTK <b>RUNNER</b></h3>
+  <div id="gameHud"><span>SCORE <b id="gScore">0</b></span><span>BEST <b id="gBest">0</b></span></div>
+  <canvas id="gameCanvas" width="640" height="240"></canvas>
+  <div id="simonPads">
+    <div class="spad" data-i="0" style="color:#FF3B41;background:rgba(255,59,65,.35)"></div>
+    <div class="spad" data-i="1" style="color:#D9D9D9;background:rgba(217,217,217,.3)"></div>
+    <div class="spad" data-i="2" style="color:#FFC878;background:rgba(255,200,120,.3)"></div>
+    <div class="spad" data-i="3" style="color:#7ae0ff;background:rgba(122,224,255,.3)"></div>
+  </div>
+  <div id="gameMsg"></div>
+  <div class="game-foot">
+    <button id="gameLb">☰ Leaderboard</button>
+    <button id="gameClose">✕ Leave Cabinet</button>
+  </div>
+</div>
+
+<!-- arcade leaderboard -->
+<div class="ov hide" id="lbOv">
+  <div class="guide-box">
+    <div class="ph-eyebrow">Arcade Bay — The Floor Remembers</div>
+    <h3 class="lb-h">LEADER<b>BOARD</b></h3>
+    <div id="lbGrid"></div>
+    <div class="lb-name-row">
+      <label for="lbNameIn">Operative Tag</label>
+      <input id="lbNameIn" maxlength="12" placeholder="OPERATIVE" autocomplete="off">
+      <button class="btn ghost" id="lbNameSave">Save Tag</button>
+    </div>
+    <div class="guide-foot"><button class="btn" id="lbClose">Back To The Floor →</button></div>
+  </div>
+</div>
+
+<!-- wardrobe -->
+<div class="ov hide" id="wardOv">
+  <div class="guide-box">
+    <div class="ph-eyebrow">Wardrobe — Arrive As Yourself</div>
+    <div class="ward-eyebrow">Character</div>
+    <div class="ward-chips" id="wardChars"></div>
+    <div class="ward-eyebrow">Festival Fit</div>
+    <div id="wardGrid"></div>
+    <div class="guide-foot"><button class="btn" id="wardClose">Wear It →</button></div>
+  </div>
+</div>
+
+<!-- fullscreen photo gallery -->
+<div id="galOv">
+  <img class="g-logo" src="assets/brand/logo.png" alt="">
+  <div id="galStage">
+    <button class="gal-btn" id="galPrev">‹</button>
+    <button class="gal-btn" id="galNext">›</button>
+    <button id="galClose">✕ CLOSE [ESC]</button>
+    <img id="galImg" alt="">
+  </div>
+  <div id="galCap"><b id="galTitle">GALLERY</b><span id="galText"></span><span class="gc-n" id="galN">1 / 1</span></div>
+  <div class="gal-tools">
+    <button id="galZoomOut">− ZOOM</button>
+    <button id="galZoomIn">+ ZOOM</button>
+    <button id="galFit">FIT</button>
+    <button id="galPlay">▶ SLIDESHOW</button>
+  </div>
+</div>
+
+<!-- purchase celebration -->
+<div id="celebrate">
+  <div class="wordmark lg"><span class="wm-1">Welcome To</span><span class="wm-2">TWKTK</span></div>
+  <div class="cb-sub">BOOKING CONFIRMED — SEE YOU AT THE CHECKPOINT</div>
+  <div class="cb-id" id="cbId">TWKTK-000000</div>
+</div>
+
+<div id="err"><div class="in"><h2>SIGNAL LOST</h2><p id="errTxt">WebGL could not start on this device. Try Chrome/Edge with hardware acceleration enabled — the worldline needs a GPU.</p></div></div>
+
+
+
+
+
+
+<nav class="world-account-links" aria-label="Account"><a href="/login">SIGN IN</a><a href="/account">MY TICKETS</a><a href="/admin" id="worldAdmin" style="display:none">ADMIN</a></nav>
+<script type="module" src="/src/experience/world.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+{
+  "source": "Original TWKTK world before backend migration",
+  "sections": [
+    {
+      "start": "const ZONES=[",
+      "text": "const ZONES=[\n  {n:'MAIN STAGE',x:0,z:-44,r:18},{n:'INTERNATIONAL DJ BOOTH',x:0,z:-31,r:8},\n  {n:'FAN PIT',x:0,z:-19,r:9},\n  {n:'HOLO EXPERIENCE',x:-55,z:-26,r:11},{n:'3D MESH LED ZONE',x:55,z:-26,r:11},\n  {n:'FASHION STORE',x:-70,z:4,r:10},{n:'ART INSTALLATION',x:70,z:4,r:10},\n  {n:'BRAND ACTIVATION VILLAGE',x:-55,z:32,r:12},{n:'PREMIUM BAR',x:-14,z:44,r:12},\n  {n:'ARCADE BAY',x:-38,z:46,r:9},\n  {n:'FOOD COURT',x:26,z:44,r:12},{n:'VIP LOUNGE',x:62,z:32,r:14},\n  {n:'EM LOUNGE',x:-60,z:-48,r:10},"
+    },
+    {
+      "start": "const STEP=",
+      "text": "const STEP=.92; // max step-up height; taller ledges need ramps/stairs\n/* Walkable elevated surfaces: [x1,x2,z1,z2,h] or ramps\n   [x1,x2,z1,z2,'rx'|'rz',h_at_min,h_at_max] interpolate along that axis */\nconst SURFACES=[\n  // main stage (walkable) — split so the hidden-room forecourt stays at floor level\n  [-40,14,-60,-44,2.6],[14,40,-52,-44,2.6],\n  // stage side ramps (west + east wings)\n  [-47.5,-40,-50,-46,'rx',0,2.6],[40,47.5,-50,-46,'rx',2.6,0],\n  // catwalk into the fan pit + side steps dow"
+    },
+    {
+      "start": "function groundH(",
+      "text": "function groundH(x,z,curY){ // highest surface the player can actually stand on\n  let h=0;\n  for(const S of SURFACES){\n    if(x<S[0]||x>S[1]||z<S[2]||z>S[3])continue;\n    const sh=surfH(S,x,z);\n    if(sh>h&&sh<=curY+STEP)h=sh;\n  }\n  return h;\n}\nfunction topH(x,z){ // absolute top — used to treat tall ledges as walls\n  let h=0;\n  for(const S of SURFACES){\n    if(x<S[0]||x>S[1]||z<S[2]||z>S[3])continue;\n    const sh=surfH(S,x,z);if(sh>h)h=sh;\n  }\n  return h;\n}\n/* Solid boxes: [x1,x2,z1,z2,hTop] — "
+    },
+    {
+      "start": "function collide(",
+      "text": "function collide(p){\n  // playable union: main hall + east corridor + after-party annex + museum wing\n  if(p.x>96){\n    if(p.x<118){ // corridor\n      if(p.z<37||p.z>51)p.x=96; else p.z=clamp(p.z,37,51);\n    }else{ // annex\n      p.x=clamp(p.x,118,162);p.z=clamp(p.z,12,68);\n    }\n  }else if(p.z>66){ // museum wing, south\n    if(p.z<70){if(Math.abs(p.x)>11.5)p.z=66}\n    else{p.x=clamp(p.x,-30.5,30.5);p.z=Math.min(p.z,110)}\n  }else{p.x=clamp(p.x,-96,96);p.z=clamp(p.z,-66,66)}\n  const py=p.y||0,m=."
+    }
+  ],
+  "interactions": [
+    "addIx(obj,label,action,dist=7){obj.traverse(o=>{o.userData.ix=interactables.length});",
+    "addIx(led,'CYCLE LED VISUAL',()=>{W.ledMode=(W.ledMode+1)%4;W.led.uniforms.uMode.value=W.ledMode;",
+    "addIx(console3,'LASERS: TOGGLE / COLOR',()=>{",
+    "addIx(dj,'TRIGGER THE DROP',()=>{triggerDrop()},9);",
+    "addIx(holo,'SWITCH HOLOGRAM',()=>{W.holoIdx=(W.holoIdx+1)%3;",
+    "addIx(fash,'SPIN THE RUNWAY',()=>{W.fashionSpd=W.fashionSpd>2?-.6:W.fashionSpd+.8;",
+    "addIx(mirror,'INTERACTIVE MIRROR',()=>{flash(.5,300);",
+    "addIx(booth,'CHANGING ROOM — TRY A FIT',()=>openWardrobe(),4.5);",
+    "addIx(bv,'INSPECT ACTIVATIONS',()=>toast('<b>BRAND ACTIVATION VILLAGE</b> — own a zone, the shuttle journey, or the reveal moment itself. Slots: AUTOMOTIVE · ALCOBEV · FASHION · TECH'),13);",
+    "addIx(ms,'BROWSE THE DROP',()=>toast('<b>DROP 01</b> — Oversized tee · zip hoodie · reflective cap. Chrome print, heavyweight. IF YOU KNOW, YOU WEAR IT.'),12);",
+    "addIx(mz,'PULSE THE MESH',()=>{W.meshPulse=1.6;toast('<b>3D MESH LED</b> — waveform injected');AudioEngine.blip()},12);",
+    "addIx(art,'REVERSE THE KINETIC',()=>{W.artDir*=-1;toast('<b>UNTITLED 07</b> — kinetic chrome, reversed');AudioEngine.blip()},9);",
+    "addIx(bar,'ORDER THE SIGNATURE',()=>{toast('<b>CHROME SOUR</b> poured — smoked silver rim, zero questions asked ✓');AudioEngine.blip()},9);",
+    "addIx(food,'BROWSE THE FOOD COURT',()=>toast('<b>FOOD COURT</b> — Ramen Lab · Smash House · Chaat Lab. Fresh, fast, and open till sunrise.'),12);",
+    "addIx(vip,'SIT IN THE LOUNGE',()=>{",
+    "addIx(vtab,'BOTTLE SERVICE',()=>{toast('<b>BOTTLE SERVICE</b> — sparklers lit, table hosted. This is why it says VIP on the wristband.');AudioEngine.blip()},5);",
+    "addIx(pb,'TAKE THE PHOTO',()=>{takePhoto()},9);",
+    "addIx(bg,'POUR A BROCODE',()=>{W.brocodePulse=1.6;",
+    "addIx(itc,'STEP INTO THE LOUNGE',()=>{",
+    "addIx(fr,'VIEW — PREVIOUS EDITIONS',()=>openGallery('editions',i),5);",
+    "addIx(py,'VIEW — '+label+' EXPERIENCE',()=>openGallery(key,0),4.5);",
+    "addIx(pg,'INSPECT — '+aw[0].split('—')[0].trim(),()=>{",
+    "addIx(pg,'INSPECT AWARD',()=>toast(`<b>${aw[0]}</b> — ${aw[1]}. For an event that never announces itself.`),4);",
+    "addIx(kk,'TOUCH KIOSK — BUY TICKETS',()=>openBoxOffice(),4)});",
+    "addIx(bo3,'BOX OFFICE COUNTER',()=>openBoxOffice(),6.5);",
+    "addIx(em,'EM LOUNGE — MEZZANINE',()=>toast('<b>EM LOUNGE</b> — elevated, hosted, bottle menu on request. The floor below, the drop above.'),10);",
+    "addIx(os,'ON STAGE — ARTIST VIEW',()=>toast('<b>ON STAGE</b> — the artist-eye view. Strictly limited on the real night.'),8);",
+    "addIx(cab,'PLAY: '+nm,()=>openGame(key),4.5);",
+    "addIx(lbW,'LEADERBOARD — THE FLOOR REMEMBERS',()=>openLb(),5);",
+    "addIx(apBar,'SUNRISE COCKTAIL',()=>toast('<b>SUNRISE SESSIONS</b> — espresso martini, first light, last dance.'),6);",
+    "addIx(fwConsole,'LAUNCH THE CLOSING SHOW',()=>{",
+    "addIx(hr,'??? — THE MARKED DOOR',()=>{"
+  ],
+  "landmarks": [
+    "{u:.10,side:-1,b:'marineDrive',n:'MARINE DRIVE · QUEEN\\'S NECKLACE'},",
+    "{u:.26,side: 1,b:'gateway',n:'GATEWAY OF INDIA'},",
+    "{u:.42,side:-1,b:'nariman',n:'NARIMAN POINT'},",
+    "{u:.58,side:-1,b:'sealink',n:'BANDRA–WORLI SEA LINK'},",
+    "{u:.72,side: 1,b:'worli',n:'WORLI SKYLINE'},",
+    "{u:.86,side: 1,b:'bkc',n:'BKC — FINAL APPROACH'},",
+    "{u:.10,side: 1,b:'indiaGate',n:'INDIA GATE'},",
+    "{u:.26,side:-1,b:'cp',n:'CONNAUGHT PLACE'},",
+    "{u:.42,side: 1,b:'lodhi',n:'LODHI ROAD'},",
+    "{u:.58,side:-1,b:'qutub',n:'QUTUB MINAR'},",
+    "{u:.72,side: 1,b:'hauz',n:'HAUZ KHAS VILLAGE'},",
+    "{u:.86,side:-1,b:'aerocity',n:'AEROCITY — FINAL APPROACH'},",
+    "{u:.10,side:-1,b:'mgroad',n:'MG ROAD'},",
+    "{u:.26,side: 1,b:'cubbon',n:'CUBBON PARK'},",
+    "{u:.42,side:-1,b:'vidhana',n:'VIDHANA SOUDHA'},",
+    "{u:.58,side: 1,b:'ubcity',n:'UB CITY'},",
+    "{u:.72,side:-1,b:'church',n:'CHURCH STREET'},",
+    "{u:.86,side: 1,b:'ecity',n:'ELECTRONIC CITY — FINAL APPROACH'},",
+    "{u:l.u,n:l.n});"
+  ]
+}

@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+dist/
+*.env
+*.env.*
+!.env.example
+assets/models/player.glb
+test-output/
+server/node_modules/
+server/data/
+
+# environment & secrets — commit .env.example, never .env
+.env
+.env.local
+
+# OS / editor noise
+Thumbs.db
+.DS_Store
+*.log
+
+# local tooling
+.claude/
+
+# pre-Razorpay backups (local only; would otherwise be served publicly)
+backups-pre-razorpay/
+server/.env
+preview.png
+preview-map.png
+preview-globe.png
+TWKTK-hostinger.zip
+.legacy-server-dependencies/
