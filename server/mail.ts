@@ -1,13 +1,22 @@
 import nodemailer from "nodemailer";
 import { randomUUID } from "node:crypto";
 import { pool } from "./db";
-export const mailReady = () =>
+
+export const hasSmtpConfig = () =>
   Boolean(
     process.env.SMTP_HOST &&
     process.env.SMTP_USER &&
     process.env.SMTP_PASS &&
     process.env.MAIL_FROM,
   );
+
+export const mailReady = () =>
+  Boolean(
+    hasSmtpConfig() ||
+      (process.env.NODE_ENV !== "production" &&
+        process.env.SMTP_DEV !== "false"),
+  );
+
 const transport = () =>
   nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -18,14 +27,23 @@ const transport = () =>
     connectionTimeout: 10000,
     socketTimeout: 15000,
   });
+
 export async function sendLogin(email: string, link: string) {
-  await transport().sendMail({
-    from: process.env.MAIL_FROM,
-    to: email,
-    subject: "Your TWKTK sign-in link",
-    text: `Enter your world.\n\n${link}\n\nThis link expires in 15 minutes and works once. If you did not request it, ignore this email.`,
-  });
+  if (hasSmtpConfig()) {
+    await transport().sendMail({
+      from: process.env.MAIL_FROM,
+      to: email,
+      subject: "Your TWKTK sign-in link",
+      text: `Enter your world.\n\n${link}\n\nThis link expires in 15 minutes and works once. If you did not request it, ignore this email.`,
+    });
+  } else {
+    console.log("\n========================================================");
+    console.log(`✉️  [DEV EMAIL] Sign-in link for ${email}:`);
+    console.log(`🔗  ${link}`);
+    console.log("========================================================\n");
+  }
 }
+
 export async function queueMail(
   client: any,
   email: string,
@@ -37,6 +55,7 @@ export async function queueMail(
     [randomUUID(), email, subject, body],
   );
 }
+
 export async function flushMail() {
   if (!mailReady() || !process.env.DATABASE_URL) return;
   const client = await pool.connect();
@@ -47,16 +66,25 @@ export async function flushMail() {
     );
     for (const row of rows) {
       try {
-        await transport().sendMail({
-          from: process.env.MAIL_FROM,
-          to: row.recipient,
-          subject: row.subject,
-          text: row.body,
-        });
+        if (hasSmtpConfig()) {
+          await transport().sendMail({
+            from: process.env.MAIL_FROM,
+            to: row.recipient,
+            subject: row.subject,
+            text: row.body,
+          });
+        } else {
+          console.log("\n========================================================");
+          console.log(`✉️  [DEV TICKET EMAIL] To: ${row.recipient}`);
+          console.log(`📋  Subject: ${row.subject}`);
+          console.log(row.body);
+          console.log("========================================================\n");
+        }
         await client.query("UPDATE email_queue SET sent_at=now() WHERE id=$1", [
           row.id,
         ]);
-      } catch {
+      } catch (err) {
+        console.error("Failed to deliver email:", err);
         await client.query(
           "UPDATE email_queue SET attempts=attempts+1 WHERE id=$1",
           [row.id],

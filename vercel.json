@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/admin", "destination": "/portal.html" },
+    { "source": "/login", "destination": "/portal.html" },
+    { "source": "/signup", "destination": "/portal.html" },
+    { "source": "/account", "destination": "/portal.html" },
+    { "source": "/privacy", "destination": "/portal.html" },
+    { "source": "/terms", "destination": "/portal.html" },
+    { "source": "/refunds", "destination": "/portal.html" },
+    { "source": "/admin-preview", "destination": "/portal.html" },
+    { "source": "/world", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

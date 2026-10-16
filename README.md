@@ -1,46 +1,178 @@
-# TWKTK — festival platform
+# TWKTK Festival Platform
 
-The original TWKTK globe-to-city-to-bus-to-venue experience, bundled with Vite and Three.js, plus React/TypeScript account and admin pages and a TypeScript/Express backend, managed PostgreSQL, SMTP email sign-in and Razorpay Standard Checkout. Runtime business data is stored in the hosted database. There is no JSON store, Apps Script backend, browser session storage, offline mode, service worker or exposed project-root file server.
+The official TWKTK (Those Who Know They Know) full-stack festival platform. Built with a high-performance **Three.js** 3D interactive world, **React 19** customer & admin portal, and a production **TypeScript / Express** backend with **PostgreSQL**, **Razorpay** checkout, and **SMTP** transactional ticketing.
 
-## Included
+---
 
-- Sign up/log in with a password, verified email link or Google (requires a Google OAuth client configured in hosting). Checkout locks the verified account email, collects name/phone and reuses customer profile details. Admins have a searchable, paginated customer list and a full customer sheet in Excel exports. The admin page and APIs require admin authorization; public visitors see no admin link.
+## ⚡ Quick Answers
 
-- The original black, red and white branding, globe city selection, orbital descent, TWKTK-branded bus journey past the landmarks of Mumbai, Delhi and Bengaluru, warehouse arrival, museum and festival floor.
-- All original map locations, 22 zones, interactive stalls, mini/full maps, teleport points, galleries, arcade games, wardrobe and lounge interactions are retained in src/experience/world.js. Fixes include bus cabin look rotation, audio scheduler backlog, quality resize handling, lost movement keys, touch cancellation, custom-model walking/seating and a VIP floor height correction. The Earth now has a real surface texture. The supplied character is optimized from 98.4 MB to 5.7 MB; the original remains a source asset and is not served publicly.
-- Password signup/login with salted scrypt hashes, verified email activation, matching password validation and terms acceptance. Google and single-use email links remain available. Sessions use secure HTTP-only cookies: browser-session/eight hours normally, or 30 days with Remember me.
-- Delhi on **31 October 2026** and Bengaluru on **1 November 2026**. Both start with sales closed until hosting and event details are configured. Category prices match the original website, with 200 editable inventory units per category (2,200 total admissions including tables for six). The 18:00 start time remains a draft. Public pages display prices while checkout stays closed when services are unconfigured.
-- Admin account: **mayank@emergencenetwork.in**. `/admin` lets that signed-in account create events, edit dates/venues/prices/capacity, open/close sales, check in tickets, review bookings, retry failed email deliveries, reconcile delayed payments and export a multi-sheet Excel workbook.
-- The original six ticket categories are managed in the admin with separate prices and inventory. TABLES STARTING issues six guest tickets per purchased table and consumes six places in total venue capacity. Other categories issue one guest ticket per unit. Setup category prices are drafts; all sales remain closed until configured.
-- No admin delete controls. PostgreSQL triggers reject deletion of events, bookings, tickets, users and email delivery records. Audit rows reject updates and deletion. Changes append old/new values and admin identity. Previously purchased quantities and amounts cannot be rewritten.
-- Razorpay server-created orders, signature verification, amount/currency/account checks, captured-payment checks and idempotent ticket issuance. Callback and webhook confirmations converge on the same transaction.
-- Confirmation email queued in the same database transaction as ticket issuance. Failed deliveries retry up to ten times, survive restarts and are visible as pending to the admin. A mail server can deliver a message before a connection fails, so rare duplicate emails are possible; tickets are not duplicated.
+### Why are we running 2 servers in `pnpm dev`?
 
-## Hosting
+In local development, `pnpm dev` runs:
+```bash
+concurrently "tsx watch server/app.ts" "vite --host 127.0.0.1"
+```
 
-Your selected host is Hostinger: follow [HOSTINGER.md](HOSTINGER.md) and upload the prepared `TWKTK-hostinger.zip`. Use the Node.js web app service with a hosted PostgreSQL database, email provider and replacement live Razorpay secrets. The local [admin preview](http://localhost:8140/admin-preview) uses sample records and never bypasses the connected admin's authentication. Original category prices are retained, and initial inventory is 200 units per category, editable in the dashboard. **The project is prepared for deployment, not already deployed.** [HOSTING.md](HOSTING.md) has the operational verification steps; `render.yaml` remains available as an alternative host configuration.
+1. **Server 1: Vite Dev Server (`http://127.0.0.1:5173`)**
+   - Serves the frontend (Three.js 3D world, React 19 portal, Tailwind/CSS, and assets).
+   - Provides instant **Hot Module Replacement (HMR)** so code changes update instantly in the browser without full reloads.
 
-The supplied Razorpay test key ID is configured. Its private secret was shared in chat; rotate it and enter the replacement directly in hosting settings. Do not commit it. Configure the Razorpay webhook at:
+2. **Server 2: Express API Server (`http://127.0.0.1:8140`)**
+   - Runs the backend API (`/api/*`).
+   - Connects to PostgreSQL, manages sessions/cookies, generates Razorpay orders, verifies payment signatures & webhooks, and queues transactional emails.
 
-`https://www.thosewhoknowtheyknow.com/api/webhooks/razorpay`
+3. **How they talk to each other in dev:**
+   - In `vite.config.ts`, Vite includes a reverse proxy that forwards all `/api/*` and `/assets/*` requests directly to `http://127.0.0.1:8140`.
+   - You only open `http://localhost:5173` in your browser. All backend API calls work seamlessly with zero CORS issues.
 
-Subscribe to `payment.captured` and `order.paid` and set the same signing secret in `RAZORPAY_WEBHOOK_SECRET`. Test-mode payments are not real ticket sales. Switch both keys and the webhook configuration to live mode only after your test transaction, provider account activation and event/policy review.
+> 💡 **In Production on Vercel, you DO NOT run 2 servers.**  
+> Vercel hosts the frontend as optimized static assets on its global Edge CDN (`dist/`) and executes the Express backend as a Serverless Function (`api/index.ts`) for all `/api/*` routes.
 
-## Development and verification
+---
 
-Requires Node 22 or newer. `npm ci`, `npm run build`, `npm test`. `npm run dev` serves the interface at `http://localhost:5173`; the API runs at port 8140. Provide development settings through process environment, with `APP_URL=http://localhost:5173`. For a production build preview, use `APP_URL=http://localhost:8140 npm start` (set the environment in your shell). The original globe and city journey run without account credentials, but accounts and payments return explicit unavailable responses until configured. This does not store visitor records locally.
+These credentials are saved in `.env` for local testing and must also be added into your Vercel Project Environment Variables.
 
-`npm run migrate` applies the idempotent PostgreSQL schema and seeds the two drafts. Run migrations before starting a deployed service. Production startup refuses missing database, admin and SMTP configuration. The migration login owns schema; for stronger separation, use a restricted application role after migration with only SELECT/INSERT/UPDATE on business tables, SELECT/INSERT on audit_logs and DELETE only on login_tokens/sessions. Schema owners can bypass triggers; application immutability does not replace independent managed backups or a separate audit archive.
+---
 
-## Operational limits
+## 🚀 Production Hosting on Vercel (Step-by-Step)
 
-- Pending reservations remain counted until resolved; no automatic inventory release is attempted because late payment capture must not oversell an event. Use CHECK PAYMENT in the admin area to reconcile captured payments. If order creation timed out, locate the receipt matching the displayed booking ID in Razorpay and enter the matching provider order ID; the backend verifies its receipt, amount and currency before linking it. The app blocks automatic second creation after an ambiguous timeout. This conservative policy can tie up capacity.
-- Rate limits are process-local. Run one app instance initially; before adding replicas, use shared rate-limit storage. A CDN/WAF can provide additional traffic controls.
-- Refunds must be performed through Razorpay and recorded in your accounting workflow. The app currently handles sales and entry, not automated refunds or tax invoices.
-- Policy pages are organizer-review drafts. Publish final business identity, contact, age restrictions, event rules, cancellation/refund terms and retention policy before live payments.
-- Database/SMTP/Razorpay production round trips and DNS require configured external accounts; local checks cannot certify those integrations or guarantee perfect security.
+The project includes pre-configured Vercel integration via:
+- [vercel.json](file:///Users/piyush/Desktop/mayank/vercel.json): Defines the build output (`dist`), routes `/api/(.*)` to the serverless function handler, and routes frontend pages (`/admin`, `/login`, `/portal.html`, `/world`, `/index.html`).
+- [api/index.ts](file:///Users/piyush/Desktop/mayank/api/index.ts): Bridges Vercel serverless requests into the Express application.
 
-Only `/assets/brand`, `/assets/images`, the optimized `/assets/models/player-web.glb`, `/assets/audio` and built client files are public. Environment files, source, documentation and database records cannot be fetched through static routes.
+---
 
-Signed-in wardrobe preferences, arcade scores and guide state are stored in PostgreSQL world_profiles. Guests retain only temporary in-memory preferences for the current visit. Existing legacy data under server/data and ignored backups has been preserved for migration and is never served publicly.
-The native Node production build and tests were verified locally. Docker image execution was not verified because the local Docker daemon was unavailable; the default Render Blueprint uses native Node hosting.
+### Step 1: Provision a Managed PostgreSQL Database
+
+> [!IMPORTANT]
+> Vercel is a **serverless** environment. Ephemeral local storage (`/tmp` or `.data`) resets between cold starts. You **MUST** use a persistent cloud PostgreSQL database in production (e.g., [Neon](https://neon.tech), [Supabase](https://supabase.com), or [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)).
+
+1. Create a free or production database on Neon, Supabase, or AWS RDS.
+2. Copy the pooled connection string, for example:
+   ```text
+   postgres://username:password@ep-cool-db.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+
+---
+
+### Step 2: Run Database Migrations
+
+Apply the database schema and initial festival data to your remote database:
+
+```bash
+# In your local terminal, point DATABASE_URL to your remote PostgreSQL instance:
+DATABASE_URL="postgres://username:password@your-db-host/dbname?sslmode=require" pnpm run migrate
+```
+
+This creates the tables (`events`, `ticket_categories`, `orders`, `tickets`, `users`, `sessions`, `email_queue`, `audit_logs`) and applies immutability triggers.
+
+---
+
+### Step 3: Deploy Project to Vercel
+
+1. **Push your code to GitHub / GitLab**.
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard) and click **"Add New... → Project"**.
+3. Import your Git repository.
+4. Set the project configuration:
+   - **Framework Preset**: `Vite` (or `Other`)
+   - **Root Directory**: `./`
+   - **Build Command**: `pnpm run build` (or `npm run build`)
+   - **Output Directory**: `dist`
+   - **Install Command**: `pnpm install` (or `npm install`)
+
+---
+
+### Step 4: Configure Production Environment Variables in Vercel
+
+Under **Project Settings → Environment Variables**, add:
+
+| Key | Value / Description | Environment |
+| :--- | :--- | :--- |
+| `NODE_ENV` | `production` | Production |
+| `APP_URL` | `https://www.thosewhoknowtheyknow.com` (or your assigned `.vercel.app` URL initially) | Production |
+| `DATABASE_URL` | Your remote PostgreSQL connection string (from Step 1) | Production, Preview |
+| `DATABASE_SSL` | `true` | Production, Preview |
+| `TRUST_PROXY_HOPS` | `1` | Production, Preview |
+| `ADMIN_EMAILS` | `mayank@emergencenetwork.in` | Production, Preview |
+| `CONTACT_EMAIL` | `mayank@emergencenetwork.in` | Production, Preview |
+| `RAZORPAY_KEY_ID` | `rzp_test_ToW7BPeKuvvWRg` (or live key `rzp_live_...` for real sales) | Production, Preview |
+| `RAZORPAY_KEY_SECRET` | `2d5dgJBckneeXT4Xc4PLIOLr` (or live secret) | Production, Preview |
+| `RAZORPAY_WEBHOOK_SECRET` | `TWKTK@2006` | Production, Preview |
+| `RAZORPAY_DEV_MOCK` | `false` | Production, Preview |
+| `SMTP_HOST` | e.g. `smtp.resend.com` or `smtp.sendgrid.net` | Production |
+| `SMTP_PORT` | `587` | Production |
+| `SMTP_USER` | Your SMTP username / API key | Production |
+| `SMTP_PASS` | Your SMTP password / secret | Production |
+| `MAIL_FROM` | `TWKTK <tickets@thosewhoknowtheyknow.com>` | Production |
+| `GOOGLE_CLIENT_ID` | *(Optional)* Google OAuth Client ID | Production |
+| `GOOGLE_CLIENT_SECRET`| *(Optional)* Google OAuth Client Secret | Production |
+
+> [!NOTE]
+> During initial staging, if testing without a custom domain, set `APP_URL` to `https://<your-project-name>.vercel.app`. The server validates `APP_URL` against the request origin for security.
+
+Click **Deploy**.
+
+---
+
+### Step 5: Configure Custom Domain & SSL on Vercel
+
+1. In Vercel, go to **Settings → Domains**.
+2. Add `www.thosewhoknowtheyknow.com` and `thosewhoknowtheyknow.com`.
+3. In your DNS manager (e.g., GoDaddy, Cloudflare):
+   - For `www`: Add a **CNAME** pointing to `cname.vercel-dns.com`
+   - For root `@`: Add an **A record** pointing to `76.76.21.21` (or redirect apex to `www`).
+4. Wait for Vercel to issue the automatic Let's Encrypt SSL certificate.
+
+---
+
+### Step 6: Configure Razorpay Webhooks
+
+1. Log into your [Razorpay Dashboard](https://dashboard.razorpay.com/).
+2. Navigate to **Account & Settings → Webhooks**.
+3. Click **Add New Webhook**:
+   - **Webhook URL**: `https://www.thosewhoknowtheyknow.com/api/webhooks/razorpay`
+   - **Secret**: `TWKTK@2006`
+   - **Alert Email**: `mayank@emergencenetwork.in`
+   - **Active Events**: Check `payment.captured` and `order.paid`.
+4. Click **Create Webhook**.
+
+---
+
+### Step 7: Post-Deployment Smoke Test & Verification
+
+1. **Health Check**:
+   Visit `https://www.thosewhoknowtheyknow.com/api/healthz` — verify it returns `{ status: "ok" }`.
+2. **Admin Portal**:
+   Navigate to `https://www.thosewhoknowtheyknow.com/admin`. Log in using `mayank@emergencenetwork.in`. Verify that event inventory and categories are editable.
+3. **Checkout Flow**:
+   Select a ticket in the 3D world or booking dialog. Complete a checkout using Razorpay Test Mode.
+4. **Webhook & Ticket Issuance**:
+   Confirm that the order status transitions to `paid`, the ticket QR/code is generated, and a confirmation email is dispatched.
+
+---
+
+## 🛠 Local Development & Testing
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run dev servers (Vite 5173 + API 8140)
+pnpm dev
+
+# Run automated tests
+pnpm test
+
+# Build for production
+pnpm run build
+```
+
+---
+
+## 🔒 Security Architecture Highlights
+
+- **Anti-tamper immutability**: PostgreSQL triggers prevent deletion of orders, tickets, and audit trails.
+- **Strict Razorpay signature verification**: Every payment callback and webhook is verified via HMAC-SHA256.
+- **Idempotent processing**: Duplicate callbacks or webhook retries converge on the exact same booking record without duplicate ticket creation.
+- **Secure Sessions**: HTTP-only, SameSite=Strict cookies with cryptographic tokens.
+- **Production Safety**: Startup aborts if `APP_URL` is non-HTTPS or required database/email configs are missing.

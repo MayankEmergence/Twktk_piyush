@@ -108,36 +108,54 @@ function surfaceMat(color,width,height,{tile=4,tiles=false,roughness=.8}={}){
 
 /* ================= renderer ================= */
 let renderer;
-try{
-  renderer=new THREE.WebGLRenderer({antialias:!isTouch,powerPreference:'high-performance'});
-}catch(e){$('#err').style.display='flex';throw e}
-renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.25:1.75));
-renderer.setSize(innerWidth,innerHeight);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.0;
-renderer.shadowMap.enabled=!isTouch;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.domElement.className='webgl';
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: !isTouch, powerPreference: 'default' });
+} catch(e1) {
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: false });
+  } catch(e2) {
+    $('#err').style.display = 'flex';
+    throw e2;
+  }
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch ? 1.25 : 1.75));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = !isTouch;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.domElement.className = 'webgl';
 $('#app').appendChild(renderer.domElement);
 
-const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,3000);
-let scene=new THREE.Scene();
-const renderPass=new RenderPass(scene,camera);
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth/2,innerHeight/2),.35,.6,1.15);
-const fxaa=new ShaderPass(FXAAShader);
-const composer=new EffectComposer(renderer);
-composer.addPass(renderPass);composer.addPass(bloom);composer.addPass(fxaa);composer.addPass(new OutputPass());
-function setFxaaRes(){const pr=renderer.getPixelRatio();
-  fxaa.material.uniforms.resolution.value.set(1/(innerWidth*pr),1/(innerHeight*pr))}
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, .1, 3000);
+let scene = new THREE.Scene();
+const renderPass = new RenderPass(scene, camera);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), .35, .6, 1.15);
+const fxaa = new ShaderPass(FXAAShader);
+const composer = new EffectComposer(renderer);
+composer.addPass(renderPass);
+composer.addPass(bloom);
+composer.addPass(fxaa);
+composer.addPass(new OutputPass());
+function setFxaaRes() {
+  const pr = renderer.getPixelRatio();
+  fxaa.material.uniforms.resolution.value.set(1 / (innerWidth * pr), 1 / (innerHeight * pr));
+}
 setFxaaRes();
-// image-based lighting for PBR metals/glass (cheap, huge visual lift)
-const pmrem=new THREE.PMREMGenerator(renderer);
-const roomEnvironment=new RoomEnvironment();const ENV=pmrem.fromScene(roomEnvironment,.06).texture;roomEnvironment.dispose();pmrem.dispose();
-function useScene(s){scene=s;renderPass.scene=s}
-addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);setFxaaRes();
+const pmrem = new THREE.PMREMGenerator(renderer);
+const roomEnvironment = new RoomEnvironment();
+const ENV = pmrem.fromScene(roomEnvironment, .06).texture;
+roomEnvironment.dispose();
+pmrem.dispose();
+function useScene(s) { scene = s; renderPass.scene = s; }
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  setFxaaRes();
 });
+
 
 /* ================= audio engine (synth techno, no files) ================= */
 const AudioEngine={

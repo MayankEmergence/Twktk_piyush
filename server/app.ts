@@ -5,9 +5,10 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes, createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import { z } from "zod";
 import { pool, databaseReady } from "./db";
 import {
@@ -24,10 +25,15 @@ import { validateWorldPrefs } from "./world-preferences";
 import { initialEvents, categoryNames, originalPrices } from "../src/festival";
 import { safeReturn, verifyGoogleToken } from "./google-auth";
 import { createSession, setSessionCookie } from "./session";
-import { createHash } from "node:crypto";
 import { hashPassword, verifyPassword } from "./passwords";
 const app = express(),
   root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+try {
+  if (typeof process.loadEnvFile === "function") {
+    const envFile = path.resolve(root, ".env");
+    if (existsSync(envFile)) process.loadEnvFile(envFile);
+  }
+} catch {}
 const production = process.env.NODE_ENV === "production";
 const googleReady = () =>
   Boolean(
@@ -83,9 +89,10 @@ app.get("/sw.js", (_q, s) => {
 });
 const payReady = () =>
   Boolean(
-    process.env.RAZORPAY_KEY_ID &&
-    process.env.RAZORPAY_KEY_SECRET &&
-    process.env.RAZORPAY_WEBHOOK_SECRET,
+    (process.env.RAZORPAY_KEY_ID &&
+      process.env.RAZORPAY_KEY_SECRET &&
+      (process.env.RAZORPAY_WEBHOOK_SECRET || !production)) ||
+      (!production && process.env.RAZORPAY_DEV_MOCK === "true"),
   );
 async function razorpay(method: string, route: string, body?: unknown) {
   const r = await fetch(`https://api.razorpay.com/v1${route}`, {
@@ -97,12 +104,36 @@ async function razorpay(method: string, route: string, body?: unknown) {
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(15000),
   });
-  if (!r.ok) throw new Error("Payment provider unavailable");
+  if (!r.ok) {
+    const errText = await r.text().catch(() => "");
+    console.error(`Razorpay API error [${r.status} ${r.statusText}]:`, errText);
+    throw new Error("Payment provider unavailable");
+  }
   return r.json();
 }
 async function finalize(orderId: string, paymentId: string) {
-  const payment = await razorpay("GET", `/payments/${paymentId}`),
-    client = await pool.connect();
+  const isMock = orderId.startsWith("order_mock_") && !production;
+  let payment: any;
+  if (isMock) {
+    payment = {
+      status: "captured",
+      order_id: orderId,
+      currency: "INR",
+    };
+  } else {
+    payment = await razorpay("GET", `/payments/${paymentId}`);
+    if (payment.status === "authorized") {
+      try {
+        payment = await razorpay("POST", `/payments/${paymentId}/capture`, {
+          amount: payment.amount,
+          currency: "INR",
+        });
+      } catch (err) {
+        console.error("Auto-capture attempt failed:", err);
+      }
+    }
+  }
+  const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const order = (
@@ -111,6 +142,7 @@ async function finalize(orderId: string, paymentId: string) {
         [orderId],
       )
     ).rows[0];
+    if (isMock && order) payment.amount = order.amount;
     if (!order || !capturedPaymentMatches(payment, order))
       throw new Error("Payment is not captured or does not match the booking");
     if (order.status !== "paid") {
@@ -188,11 +220,25 @@ app.use(
 app.use(express.json({ limit: "16kb" }));
 app.use("/api", (q, s, next) => {
   s.set("Cache-Control", "no-store");
-  if (
-    !["GET", "HEAD", "OPTIONS"].includes(q.method) &&
-    q.get("Origin") !== origin
-  )
-    return s.status(403).json({ error: "Request origin rejected" });
+  if (!["GET", "HEAD", "OPTIONS"].includes(q.method)) {
+    const reqOrigin = q.get("Origin");
+    const allowedOrigins = new Set([
+      origin,
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      `http://localhost:${process.env.PORT || 8140}`,
+      `http://127.0.0.1:${process.env.PORT || 8140}`,
+    ]);
+    if (!production) {
+      if (reqOrigin && !allowedOrigins.has(reqOrigin)) {
+        return s.status(403).json({ error: "Request origin rejected" });
+      }
+    } else {
+      if (reqOrigin !== origin) {
+        return s.status(403).json({ error: "Request origin rejected" });
+      }
+    }
+  }
   next();
 });
 app.get("/api/config", (_q, s) =>
@@ -713,16 +759,22 @@ app.post("/api/payments/order", auth, async (q: AuthedRequest, s) => {
         error:
           "Your payment order is being created or needs reconciliation. Please wait and contact the organizer before retrying.",
       });
-    const remote = await razorpay("POST", "/orders", {
-      amount: order.amount,
-      currency: "INR",
-      receipt: order.id,
-      notes: { booking_id: order.id },
-    });
+    let remoteId = "";
+    if (process.env.RAZORPAY_DEV_MOCK === "true" && !production) {
+      remoteId = "order_mock_" + randomBytes(8).toString("hex");
+    } else {
+      const remote = await razorpay("POST", "/orders", {
+        amount: order.amount,
+        currency: "INR",
+        receipt: order.id,
+        notes: { booking_id: order.id },
+      });
+      remoteId = remote.id;
+    }
     order = (
       await pool.query(
         "UPDATE orders SET razorpay_order_id=$1 WHERE id=$2 RETURNING *",
-        [remote.id, order.id],
+        [remoteId, order.id],
       )
     ).rows[0];
   }
@@ -749,14 +801,17 @@ app.post("/api/payments/verify", auth, async (q: AuthedRequest, s) => {
     )
   ).rows[0];
   if (!order) return s.sendStatus(404);
-  if (
-    !signatureValid(
-      process.env.RAZORPAY_KEY_SECRET || "",
-      `${order.razorpay_order_id}|${b.razorpay_payment_id}`,
-      b.razorpay_signature,
+  const isMock = b.razorpay_order_id.startsWith("order_mock_") && !production;
+  if (!isMock) {
+    if (
+      !signatureValid(
+        process.env.RAZORPAY_KEY_SECRET || "",
+        `${order.razorpay_order_id}|${b.razorpay_payment_id}`,
+        b.razorpay_signature,
+      )
     )
-  )
-    return s.status(400).json({ error: "Payment signature rejected." });
+      return s.status(400).json({ error: "Payment signature rejected." });
+  }
   s.json({
     bookingId: await finalize(order.razorpay_order_id, b.razorpay_payment_id),
   });
@@ -920,6 +975,22 @@ app.patch("/api/admin/events/:id", auth, admin, async (q: AuthedRequest, s) => {
         id,
       ],
     );
+    if (b.sales_open === true) {
+      const openCount = Number(
+        (
+          await c.query(
+            "SELECT count(*) AS n FROM ticket_types WHERE event_id=$1 AND sales_open=true",
+            [id],
+          )
+        ).rows[0].n,
+      );
+      if (openCount === 0) {
+        await c.query(
+          "UPDATE ticket_types SET sales_open=true WHERE event_id=$1",
+          [id],
+        );
+      }
+    }
     if (b.price !== undefined)
       await c.query(
         "UPDATE ticket_types SET price=$1 WHERE event_id=$2 AND name='GENERAL ACCESS'",
@@ -1186,6 +1257,11 @@ const timer = setInterval(async () => {
   }
 }, 30000);
 timer.unref();
-app.listen(Number(process.env.PORT || 8140), "0.0.0.0", () =>
-  console.log(`TWKTK server ready on port ${process.env.PORT || 8140}`),
-);
+if (!process.env.VERCEL) {
+  app.listen(Number(process.env.PORT || 8140), "0.0.0.0", () =>
+    console.log(`TWKTK server ready on port ${process.env.PORT || 8140}`),
+  );
+}
+
+export default app;
+export { app };

@@ -295,51 +295,63 @@ export function setupBoxOffice(ctx: any) {
         name: input("#boName").value.trim(),
         phone: input("#boPhone").value,
       });
-      await new Promise<void>((resolve, reject) => {
-        const razorpay = new (window as any).Razorpay({
-          key: order.keyId,
-          order_id: order.orderId,
-          amount: order.amount,
-          currency: order.currency,
-          name: "THOSE WHO KNOW THEY KNOW",
-          description: `${bo.type.name} × ${bo.qty} / ${bo.event.city}`,
-          prefill: {
-            name: input("#boName").value,
-            email: order.email,
-            contact: input("#boPhone").value,
-          },
-          theme: { color: "#D81F26" },
-          handler: async (response: any) => {
-            paid = true;
-            $("#rzpMsg").textContent = "Confirming your payment…";
-            try {
-              const result = await api("/payments/verify", "POST", response);
-              bo.ref = result.bookingId;
-              resolve();
-            } catch (e) {
-              reject(e);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              if (!paid)
-                reject(
-                  new Error(
-                    "Checkout closed. Check your bank if payment was attempted before retrying.",
-                  ),
-                );
-            },
-          },
+      if (order.orderId.startsWith("order_mock_")) {
+        paid = true;
+        $("#rzpMsg").textContent = "Confirming test payment…";
+        const result = await api("/payments/verify", "POST", {
+          razorpay_order_id: order.orderId,
+          razorpay_payment_id:
+            "pay_mock_" + Math.random().toString(36).slice(2, 12),
+          razorpay_signature: "mock_signature",
         });
-        razorpay.on("payment.failed", () =>
-          reject(
-            new Error(
-              "Payment was not completed. Check your bank before trying again.",
+        bo.ref = result.bookingId;
+      } else {
+        await new Promise<void>((resolve, reject) => {
+          const razorpay = new (window as any).Razorpay({
+            key: order.keyId,
+            order_id: order.orderId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "THOSE WHO KNOW THEY KNOW",
+            description: `${bo.type.name} × ${bo.qty} / ${bo.event.city}`,
+            prefill: {
+              name: input("#boName").value,
+              email: order.email,
+              contact: input("#boPhone").value,
+            },
+            theme: { color: "#D81F26" },
+            handler: async (response: any) => {
+              paid = true;
+              $("#rzpMsg").textContent = "Confirming your payment…";
+              try {
+                const result = await api("/payments/verify", "POST", response);
+                bo.ref = result.bookingId;
+                resolve();
+              } catch (e) {
+                reject(e);
+              }
+            },
+            modal: {
+              ondismiss: () => {
+                if (!paid)
+                  reject(
+                    new Error(
+                      "Checkout closed. Check your bank if payment was attempted before retrying.",
+                    ),
+                  );
+              },
+            },
+          });
+          razorpay.on("payment.failed", () =>
+            reject(
+              new Error(
+                "Payment was not completed. Check your bank before trying again.",
+              ),
             ),
-          ),
-        );
-        razorpay.open();
-      });
+          );
+          razorpay.open();
+        });
+      }
       $("#bkDoneTitle").textContent = "Payment Successful — Booking Confirmed";
       $("#bkDoneMsg").textContent =
         "Your ticket purchase is confirmed. Your confirmation email is on its way. View your tickets in My Tickets.";

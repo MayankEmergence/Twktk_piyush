@@ -1,3 +1,7 @@
+@import "@fontsource/syncopate/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/vt323/400.css";
 
 :root{
   --void:#050507;--panel:#0A0A0E;--ink:#FFFFFF;
@@ -155,7 +159,7 @@ body.outside #skipBtn:hover{color:var(--gold);border-color:var(--gold-dim)}
 
 /* fades / flash */
 #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:95;transition:opacity .4s}
-#fade{position:fixed;inset:0;background:var(--void);opacity:1;pointer-events:none;z-index:94;transition:opacity 1s}
+#fade{position:fixed;inset:0;background:var(--void);opacity:0;pointer-events:none;z-index:94;transition:opacity 1s}
 
 /* HUD */
 #hud{position:fixed;inset:0;pointer-events:none;z-index:70;opacity:0;transition:opacity .8s}

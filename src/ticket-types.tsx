@@ -15,6 +15,50 @@ export default function TicketTypes({
         Open the gathering and the desired categories to allow sales. Table
         inventory counts tables; each table issues six guest tickets.
       </p>
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        <button
+          type="button"
+          className="button"
+          onClick={async () => {
+            try {
+              await Promise.all(
+                types.map((t) =>
+                  api(`/admin/ticket-types/${t.id}`, "PATCH", {
+                    sales_open: true,
+                  }),
+                ),
+              );
+              setMessage("All categories opened for sales.");
+              onUpdate();
+            } catch (e) {
+              setMessage((e as Error).message);
+            }
+          }}
+        >
+          OPEN ALL CATEGORIES
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={async () => {
+            try {
+              await Promise.all(
+                types.map((t) =>
+                  api(`/admin/ticket-types/${t.id}`, "PATCH", {
+                    sales_open: false,
+                  }),
+                ),
+              );
+              setMessage("All categories closed for sales.");
+              onUpdate();
+            } catch (e) {
+              setMessage((e as Error).message);
+            }
+          }}
+        >
+          CLOSE ALL CATEGORIES
+        </button>
+      </div>
       {types.map((t) => (
         <form
           key={t.id}

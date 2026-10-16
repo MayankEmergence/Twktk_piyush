@@ -39,8 +39,14 @@ export default defineConfig({
 
   server: {
     proxy: {
-      "/api": "http://127.0.0.1:8140",
-      "/assets": "http://127.0.0.1:8140",
+      "/api": {
+        target: "http://127.0.0.1:8140",
+        changeOrigin: true,
+      },
+      "/assets": {
+        target: "http://127.0.0.1:8140",
+        changeOrigin: true,
+      },
     },
   },
 
