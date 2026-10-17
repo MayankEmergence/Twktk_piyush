@@ -145,151 +145,109 @@ import { existsSync as existsSync2 } from "node:fs";
 // server/email-templates.ts
 function renderLoginEmailHtml({ email, link, origin: origin2 }) {
   const isSignup = link.includes("verify=signup");
+  const isReset = link.includes("reset") || link.includes("forgot");
   const logoUrl = `${origin2}/assets/brand/logo.png`;
-  const badgeTitle = isSignup ? "REGISTRATION // EMAIL VERIFICATION" : "AUTHENTICATION // SECURE ACCESS";
-  const mainTitle = isSignup ? "VERIFY YOUR ACCOUNT" : "ENTER YOUR WORLD";
-  const subtitle = isSignup ? "Confirm your email address and activate your festival pass access." : "Your private access link to the TWKTK universe is ready.";
-  const buttonText = isSignup ? "CONFIRM & ENTER WORLD \u2192" : "ACCESS YOUR ACCOUNT \u2192";
-  const plainText = `${mainTitle}
+  let badge = "ACCESS LINK";
+  let title = "Enter Your World";
+  let subtitle = "Click the button below to sign in to your TWKTK account. This private access link is valid for 15 minutes.";
+  let buttonText = "Enter TWKTK \u2192";
+  if (isSignup) {
+    badge = "VERIFICATION";
+    title = "Confirm Your Account";
+    subtitle = "Click below to confirm your email and set your access password. This link expires in 15 minutes.";
+    buttonText = "Confirm Email \u2192";
+  } else if (isReset) {
+    badge = "PASSWORD RESET";
+    title = "Reset Your Password";
+    subtitle = "We received a request to reset your password. Use the link below to access your account and set a new password. If you didn't make this request, you can ignore this email.";
+    buttonText = "Reset Password \u2192";
+  }
+  const plainText = `${title.toUpperCase()}
 
 Those Who Know They Know
 
 ${subtitle}
 
-Access Link:
+Direct link:
 ${link}
 
-This link expires in 15 minutes and can only be used once.
-If you did not request this, you can safely ignore this email.
+This single-use link expires in 15 minutes.
 
-TWKTK Festival \xB7 Emergence Network \xB7 19.0760\xB0N, 72.8777\xB0E`;
+19.0760\xB0N \xB7 72.8777\xB0E \xB7 EMERGENCE`;
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>${mainTitle}</title>
-  <!--[if mso]>
-  <style type="text/css">
-    table {border-collapse:collapse;border-spacing:0;margin:0;}
-    div, td {padding:0;}
-    div {margin:0 !important;}
-  </style>
-  <![endif]-->
+  <title>${title} \u2014 TWKTK</title>
 </head>
-<body style="margin:0;padding:0;background-color:#060608;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'IBM Plex Mono',monospace;line-height:1.6;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#060608;width:100%;table-layout:fixed;">
+<body style="margin:0;padding:0;background-color:#050507;color:#ffffff;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050507;width:100%;table-layout:fixed;">
     <tr>
-      <td align="center" style="padding:40px 16px;">
-        <!-- MAIN CONTAINER -->
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;background-color:#0b0b12;border:1px solid #1f1f2e;border-radius:12px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.8);">
+      <td align="center" style="padding:48px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:500px;background-color:#09090d;border:1px solid #1a1a20;">
           
-          <!-- TOP ACCENT BAR -->
+          <!-- TOP LOGO / LABEL -->
           <tr>
-            <td style="height:4px;background:linear-gradient(90deg, #d81f26 0%, #ff3b41 50%, #e2a348 100%);font-size:0;line-height:0;">&nbsp;</td>
-          </tr>
-
-          <!-- HEADER / LOGO -->
-          <tr>
-            <td align="center" style="padding:36px 30px 24px 30px;background-color:#0b0b12;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <td style="padding:36px 36px 28px 36px;border-bottom:1px solid #14141a;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center">
-                    <img src="cid:twktk-logo" onerror="this.onerror=null;this.src='${logoUrl}';" alt="TWKTK" width="56" height="56" style="display:block;border:0;width:56px;height:56px;border-radius:50%;border:1px solid #ff3b41;background-color:#050507;" />
+                  <td valign="middle">
+                    <img src="cid:twktk-logo" onerror="this.onerror=null;this.src='${logoUrl}';" alt="TWKTK" width="36" height="36" style="display:block;border:0;width:36px;height:36px;border-radius:50%;" />
                   </td>
-                </tr>
-                <tr>
-                  <td align="center" style="padding-top:16px;">
-                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:15px;letter-spacing:3px;color:#ffffff;text-transform:uppercase;">THOSE WHO KNOW</div>
-                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:5px;color:#ff3b41;text-transform:uppercase;margin-top:2px;">THEY KNOW</div>
+                  <td align="right" valign="middle">
+                    <div style="font-size:10px;letter-spacing:2px;color:#737380;text-transform:uppercase;">${badge}</div>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- PROTOCOL BADGE -->
+          <!-- BODY -->
           <tr>
-            <td align="center" style="padding:0 30px 20px 30px;">
-              <div style="display:inline-block;padding:6px 14px;background-color:rgba(216,31,38,0.12);border:1px solid rgba(255,59,65,0.3);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;color:#ff3b41;text-transform:uppercase;">
-                ${badgeTitle}
-              </div>
-            </td>
-          </tr>
-
-          <!-- CONTENT BODY -->
-          <tr>
-            <td style="padding:0 36px 36px 36px;text-align:center;">
-              <h1 style="margin:0 0 12px 0;font-family:'Syncopate',Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;">
-                ${mainTitle}
+            <td style="padding:36px 36px 32px 36px;">
+              <div style="font-size:11px;letter-spacing:2px;color:#737380;text-transform:uppercase;margin-bottom:12px;">THOSE WHO KNOW THEY KNOW</div>
+              <h1 style="margin:0 0 16px 0;font-size:20px;font-weight:600;letter-spacing:1px;color:#ffffff;text-transform:uppercase;line-height:1.3;">
+                ${title}
               </h1>
-              <p style="margin:0 0 28px 0;font-size:14px;color:#9ca3af;line-height:1.7;">
+              <p style="margin:0 0 32px 0;font-size:13px;color:#8f8f9d;line-height:1.7;">
                 ${subtitle}
               </p>
 
-              <!-- CTA BUTTON -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0 32px 0;">
+              <!-- BUTTON -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
                 <tr>
-                  <td align="center">
-                    <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${link}" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="12%" stroke="f" fillcolor="#d81f26">
-                      <w:anchorlock/>
-                      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;letter-spacing:2px;">${buttonText}</center>
-                    </v:roundrect>
-                    <![endif]-->
-                    <!--[if !mso]><!-- -->
-                    <a href="${link}" target="_blank" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #d81f26 0%, #ff3b41 100%);color:#ffffff;font-family:'Syncopate',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-decoration:none;border-radius:6px;text-transform:uppercase;box-shadow:0 8px 24px rgba(216,31,38,0.4);">
+                  <td>
+                    <a href="${link}" target="_blank" style="display:inline-block;padding:14px 28px;background-color:#ffffff;color:#050507;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;text-decoration:none;border-radius:1px;">
                       ${buttonText}
                     </a>
-                    <!--<![endif]-->
                   </td>
                 </tr>
               </table>
 
-              <!-- SECURITY NOTICE BOX -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0f0f18;border:1px solid #1f1f2e;border-radius:8px;margin-bottom:28px;">
-                <tr>
-                  <td style="padding:16px 20px;text-align:left;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td width="20" valign="top" style="padding-right:12px;font-size:14px;color:#ff3b41;">\u{1F512}</td>
-                        <td style="font-size:12px;color:#9ca3af;line-height:1.6;">
-                          <strong style="color:#ffffff;">Security Notice:</strong> This link is valid for <span style="color:#ff3b41;font-weight:600;">15 minutes</span> and operates once. Never forward or share this email. If you did not initiate this request, your account remains secure and no action is necessary.
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- FALLBACK LINK BOX -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px dashed #1f1f2e;padding-top:20px;">
-                <tr>
-                  <td style="text-align:left;">
-                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Direct Access URL</div>
-                    <div style="background-color:#07070a;border:1px solid #1a1a26;border-radius:6px;padding:12px;word-break:break-all;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9ca3af;line-height:1.5;">
-                      <a href="${link}" target="_blank" style="color:#e2a348;text-decoration:none;">${link}</a>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-
+              <!-- URL FALLBACK -->
+              <div style="border-top:1px solid #14141a;padding-top:24px;">
+                <div style="font-size:10px;color:#50505e;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Direct link</div>
+                <div style="word-break:break-all;font-size:11px;color:#737380;line-height:1.6;">
+                  <a href="${link}" target="_blank" style="color:#8f8f9d;text-decoration:none;">${link}</a>
+                </div>
+              </div>
             </td>
           </tr>
 
           <!-- FOOTER -->
           <tr>
-            <td style="background-color:#07070c;padding:24px 30px;border-top:1px solid #161622;text-align:center;">
-              <div style="font-family:'Syncopate',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-transform:uppercase;">
-                TWKTK FESTIVAL \xB7 WORLDLINE
-              </div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;margin-top:6px;">
-                19.0760\xB0N \xB7 72.8777\xB0E \xB7 EMERGENCE NETWORK
-              </div>
-              <div style="font-size:11px;color:#4b5563;margin-top:12px;">
-                You received this email because an action was performed for <span style="color:#9ca3af;">${email}</span>.
-              </div>
+            <td style="padding:20px 36px;border-top:1px solid #14141a;background-color:#07070a;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:10px;color:#50505e;letter-spacing:1px;text-transform:uppercase;">
+                    19.0760&deg;N &middot; 72.8777&deg;E
+                  </td>
+                  <td align="right" style="font-size:10px;color:#50505e;letter-spacing:1px;text-transform:uppercase;">
+                    EMERGENCE
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -318,7 +276,7 @@ function renderTicketEmailHtml(params) {
   } = params;
   const logoUrl = `${origin2}/assets/brand/logo.png`;
   const formattedDate = new Date(startsAt).toLocaleString("en-IN", {
-    dateStyle: "full",
+    dateStyle: "medium",
     timeStyle: "short",
     timeZone: "Asia/Kolkata"
   });
@@ -327,32 +285,30 @@ function renderTicketEmailHtml(params) {
     currency: "INR",
     maximumFractionDigits: 0
   });
-  const plainText = `CONFIRMED FESTIVAL PASS // TWKTK
+  const plainText = `CONFIRMED TICKETS \u2014 TWKTK
 
-Your tickets are confirmed.
-
-Event: ${eventTitle} (${city})
-Date & Time: ${formattedDate} IST
-Venue: ${venue}
+Event: ${eventTitle}
+City: ${city.toUpperCase()}
 Category: ${category}
-Admissions: ${totalGuests} Guests
-Payment: ${formattedAmount}
+Venue: ${venue}
+Date & Time: ${formattedDate} IST
+Guests: ${totalGuests} Admissions
+Amount Paid: ${formattedAmount}
 Booking ID: ${orderId}
 
-Ticket Pass IDs:
-${ticketIds.join("\n")}
+Pass Codes:
+${ticketIds.map((id, i) => `PASS 0${i + 1} \u2014 ${id}`).join("\n")}
 
-View and manage your tickets:
+View tickets in your account:
 ${accountUrl}
 
-Important: Bring this ticket confirmation and a valid government photo ID for entry at the gate. Keep your ticket IDs private.
+Present this confirmation and a government photo ID at the entrance. Keep pass codes confidential.
 
-TWKTK Festival \xB7 Emergence Network \xB7 19.0760\xB0N, 72.8777\xB0E`;
+19.0760\xB0N \xB7 72.8777\xB0E \xB7 EMERGENCE`;
   const ticketRows = ticketIds.map(
     (id, idx) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background-color:#0a0a10;border:1px solid #1c1c2a;border-radius:4px;margin-bottom:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;">
-        <span style="color:#ff3b41;font-weight:600;">PASS #${idx + 1}</span>
-        <span style="color:#ffffff;letter-spacing:1px;">${id}</span>
+      <div style="background-color:#060608;border:1px solid #14141a;padding:12px 14px;font-size:11px;color:#8f8f9d;letter-spacing:1px;margin-bottom:6px;">
+        PASS 0${idx + 1} &mdash; ${id}
       </div>`
   ).join("");
   const html = `<!DOCTYPE html>
@@ -360,173 +316,114 @@ TWKTK Festival \xB7 Emergence Network \xB7 19.0760\xB0N, 72.8777\xB0E`;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Your TWKTK Tickets are Confirmed</title>
+  <title>Confirmed Tickets \u2014 TWKTK</title>
 </head>
-<body style="margin:0;padding:0;background-color:#060608;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'IBM Plex Mono',monospace;line-height:1.6;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#060608;width:100%;table-layout:fixed;">
+<body style="margin:0;padding:0;background-color:#050507;color:#ffffff;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050507;width:100%;table-layout:fixed;">
     <tr>
-      <td align="center" style="padding:40px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;background-color:#0b0b12;border:1px solid #1f1f2e;border-radius:12px;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,0.85);">
+      <td align="center" style="padding:48px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:500px;background-color:#09090d;border:1px solid #1a1a20;">
           
-          <!-- TOP ACCENT BAR -->
+          <!-- TOP LOGO / LABEL -->
           <tr>
-            <td style="height:4px;background:linear-gradient(90deg, #d81f26 0%, #ff3b41 50%, #e2a348 100%);font-size:0;line-height:0;">&nbsp;</td>
-          </tr>
-
-          <!-- HEADER / BRAND -->
-          <tr>
-            <td align="center" style="padding:32px 30px 20px 30px;background-color:#0b0b12;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <td style="padding:36px 36px 28px 36px;border-bottom:1px solid #14141a;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center">
-                    <img src="cid:twktk-logo" onerror="this.onerror=null;this.src='${logoUrl}';" alt="TWKTK" width="56" height="56" style="display:block;border:0;width:56px;height:56px;border-radius:50%;border:1px solid #ff3b41;background-color:#050507;" />
+                  <td valign="middle">
+                    <img src="cid:twktk-logo" onerror="this.onerror=null;this.src='${logoUrl}';" alt="TWKTK" width="36" height="36" style="display:block;border:0;width:36px;height:36px;border-radius:50%;" />
                   </td>
-                </tr>
-                <tr>
-                  <td align="center" style="padding-top:14px;">
-                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:3px;color:#ffffff;text-transform:uppercase;">THOSE WHO KNOW</div>
-                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:11px;letter-spacing:5px;color:#ff3b41;text-transform:uppercase;margin-top:2px;">THEY KNOW</div>
+                  <td align="right" valign="middle">
+                    <div style="font-size:10px;letter-spacing:2px;color:#737380;text-transform:uppercase;">CONFIRMATION</div>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- STATUS BADGE -->
+          <!-- HEADER -->
           <tr>
-            <td align="center" style="padding:0 30px 16px 30px;">
-              <div style="display:inline-block;padding:6px 16px;background-color:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;color:#10b981;text-transform:uppercase;">
-                \u2713 FESTIVAL PASS CONFIRMED \xB7 PAYMENT RECEIVED
-              </div>
-            </td>
-          </tr>
-
-          <!-- HERO TITLE -->
-          <tr>
-            <td style="padding:0 36px 24px 36px;text-align:center;">
-              <h1 style="margin:0 0 6px 0;font-family:'Syncopate',Arial,sans-serif;font-size:24px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;">
-                ${eventTitle}
+            <td style="padding:36px 36px 24px 36px;">
+              <div style="font-size:11px;letter-spacing:2px;color:#737380;text-transform:uppercase;margin-bottom:12px;">TWKTK FESTIVAL</div>
+              <h1 style="margin:0 0 8px 0;font-size:20px;font-weight:600;letter-spacing:1px;color:#ffffff;text-transform:uppercase;line-height:1.3;">
+                Tickets Confirmed
               </h1>
-              <div style="font-family:'Syncopate',Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#e2a348;text-transform:uppercase;">
-                ${city} \xB7 OFFICIAL ADMISSION
+              <div style="font-size:12px;color:#737380;letter-spacing:1px;text-transform:uppercase;">
+                ${city.toUpperCase()} &middot; ${eventTitle}
               </div>
             </td>
           </tr>
 
-          <!-- TICKET BOARDING PASS CARD -->
+          <!-- DETAILS GRID -->
           <tr>
-            <td style="padding:0 30px 30px 30px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0f0f18;border:1px solid #28283c;border-radius:10px;overflow:hidden;">
-                <!-- TICKET HEADER -->
+            <td style="padding:0 36px 28px 36px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #14141a;">
                 <tr>
-                  <td style="background-color:#151522;padding:14px 20px;border-bottom:1px solid #28283c;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:2px;text-transform:uppercase;">
-                          PASS TIER
-                        </td>
-                        <td align="right">
-                          <span style="display:inline-block;padding:4px 10px;background-color:#d81f26;color:#ffffff;font-family:'Syncopate',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;border-radius:4px;text-transform:uppercase;">
-                            ${category}
-                          </span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
+                  <td style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#737380;text-transform:uppercase;letter-spacing:1px;">Category</td>
+                  <td align="right" style="padding:14px 0;border-bottom:1px solid #14141a;font-size:12px;color:#ffffff;font-weight:600;">${category}</td>
                 </tr>
-
-                <!-- DETAILS GRID -->
                 <tr>
-                  <td style="padding:20px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="padding-bottom:16px;">
-                          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">DATE & TIME</div>
-                          <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">${formattedDate} IST</div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding-bottom:16px;">
-                          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">VENUE</div>
-                          <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">${venue}</div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                              <td width="50%" style="padding-right:10px;">
-                                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">GUEST ADMISSIONS</div>
-                                <div style="font-size:16px;color:#ffffff;font-weight:700;margin-top:2px;">${totalGuests} Guests</div>
-                              </td>
-                              <td width="50%">
-                                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">AMOUNT PAID</div>
-                                <div style="font-size:16px;color:#10b981;font-weight:700;margin-top:2px;">${formattedAmount}</div>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
+                  <td style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#737380;text-transform:uppercase;letter-spacing:1px;">Venue</td>
+                  <td align="right" style="padding:14px 0;border-bottom:1px solid #14141a;font-size:12px;color:#ffffff;">${venue}</td>
                 </tr>
-
-                <!-- PERFORATION TEAR LINE -->
                 <tr>
-                  <td style="padding:0 12px;">
-                    <div style="border-top:1px dashed #2d2d42;height:1px;font-size:0;line-height:0;">&nbsp;</div>
-                  </td>
+                  <td style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#737380;text-transform:uppercase;letter-spacing:1px;">Date & Time</td>
+                  <td align="right" style="padding:14px 0;border-bottom:1px solid #14141a;font-size:12px;color:#ffffff;">${formattedDate} IST</td>
                 </tr>
-
-                <!-- TICKET IDS -->
                 <tr>
-                  <td style="padding:20px;background-color:#0d0d14;">
-                    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">
-                      BOOKING REFERENCE: <span style="color:#e2a348;">${orderId}</span>
-                    </div>
-                    ${ticketRows}
-                  </td>
+                  <td style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#737380;text-transform:uppercase;letter-spacing:1px;">Guests</td>
+                  <td align="right" style="padding:14px 0;border-bottom:1px solid #14141a;font-size:12px;color:#ffffff;">${totalGuests} Admissions</td>
                 </tr>
-
+                <tr>
+                  <td style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#737380;text-transform:uppercase;letter-spacing:1px;">Amount Paid</td>
+                  <td align="right" style="padding:14px 0;border-bottom:1px solid #14141a;font-size:12px;color:#ffffff;font-weight:600;">${formattedAmount}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#737380;text-transform:uppercase;letter-spacing:1px;">Booking ID</td>
+                  <td align="right" style="padding:14px 0;border-bottom:1px solid #14141a;font-size:11px;color:#8f8f9d;letter-spacing:1px;">${orderId}</td>
+                </tr>
               </table>
             </td>
           </tr>
 
-          <!-- CTA BUTTON -->
+          <!-- PASS CODES -->
           <tr>
-            <td align="center" style="padding:0 36px 28px 36px;">
-              <a href="${accountUrl}" target="_blank" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #d81f26 0%, #ff3b41 100%);color:#ffffff;font-family:'Syncopate',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-decoration:none;border-radius:6px;text-transform:uppercase;box-shadow:0 8px 24px rgba(216,31,38,0.4);">
-                VIEW PASSES IN MY ACCOUNT \u2192
-              </a>
+            <td style="padding:0 36px 32px 36px;">
+              <div style="font-size:10px;color:#50505e;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Pass Codes</div>
+              ${ticketRows}
             </td>
           </tr>
 
-          <!-- GATE RULES NOTICE -->
+          <!-- BUTTON -->
           <tr>
-            <td style="padding:0 36px 30px 36px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a10;border-left:3px solid #e2a348;border-radius:4px;padding:12px 16px;">
+            <td style="padding:0 36px 36px 36px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
                 <tr>
-                  <td style="font-size:12px;color:#9ca3af;line-height:1.6;">
-                    <strong style="color:#ffffff;">Gate Admission Protocol:</strong> Present this email or your passes from the portal along with a matching government-issued photo ID at entry. Keep all ticket IDs confidential.
+                  <td>
+                    <a href="${accountUrl}" target="_blank" style="display:inline-block;padding:14px 28px;background-color:#ffffff;color:#050507;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;text-decoration:none;border-radius:1px;">
+                      View My Tickets &rarr;
+                    </a>
                   </td>
                 </tr>
               </table>
+              <div style="font-size:11px;color:#50505e;line-height:1.6;">
+                Present this confirmation and a government photo ID at the entrance. Keep pass codes confidential.
+              </div>
             </td>
           </tr>
 
           <!-- FOOTER -->
           <tr>
-            <td style="background-color:#07070c;padding:24px 30px;border-top:1px solid #161622;text-align:center;">
-              <div style="font-family:'Syncopate',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-transform:uppercase;">
-                TWKTK FESTIVAL \xB7 WORLDLINE
-              </div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;margin-top:6px;">
-                19.0760\xB0N \xB7 72.8777\xB0E \xB7 EMERGENCE NETWORK
-              </div>
-              <div style="font-size:11px;color:#4b5563;margin-top:12px;">
-                Issued to <span style="color:#9ca3af;">${email}</span> for Booking <span style="color:#9ca3af;">${orderId}</span>.
-              </div>
+            <td style="padding:20px 36px;border-top:1px solid #14141a;background-color:#07070a;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:10px;color:#50505e;letter-spacing:1px;text-transform:uppercase;">
+                    19.0760&deg;N &middot; 72.8777&deg;E
+                  </td>
+                  <td align="right" style="font-size:10px;color:#50505e;letter-spacing:1px;text-transform:uppercase;">
+                    EMERGENCE
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -563,7 +460,8 @@ async function sendLogin(email, link) {
   const origin2 = process.env.APP_URL || "https://www.thosewhoknowtheyknow.com";
   const { html, text } = renderLoginEmailHtml({ email, link, origin: origin2 });
   const isSignup = link.includes("verify=signup");
-  const subject = isSignup ? "Verify your TWKTK account" : "Your TWKTK sign-in link";
+  const isReset = link.includes("reset") || link.includes("forgot");
+  const subject = isSignup ? "Verify your TWKTK account" : isReset ? "Reset your TWKTK access" : "Your TWKTK sign-in link";
   const attachments = existsSync2(logoPath) ? [
     {
       filename: "logo.png",

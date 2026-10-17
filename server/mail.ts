@@ -41,7 +41,12 @@ export async function sendLogin(email: string, link: string) {
   const origin = process.env.APP_URL || "https://www.thosewhoknowtheyknow.com";
   const { html, text } = renderLoginEmailHtml({ email, link, origin });
   const isSignup = link.includes("verify=signup");
-  const subject = isSignup ? "Verify your TWKTK account" : "Your TWKTK sign-in link";
+  const isReset = link.includes("reset") || link.includes("forgot");
+  const subject = isSignup
+    ? "Verify your TWKTK account"
+    : isReset
+      ? "Reset your TWKTK access"
+      : "Your TWKTK sign-in link";
 
   const attachments = existsSync(logoPath)
     ? [
