@@ -448,7 +448,9 @@ var production = process.env.NODE_ENV === "production";
 var googleReady = () => Boolean(
   databaseReady() && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
 );
-var origin = new URL(process.env.APP_URL || "http://localhost:5173").origin;
+var originUrl = new URL(process.env.APP_URL || "http://localhost:5173");
+var origin = originUrl.origin;
+var altOrigin = originUrl.hostname.startsWith("www.") ? `${originUrl.protocol}//${originUrl.hostname.slice(4)}${originUrl.port ? `:${originUrl.port}` : ""}` : `${originUrl.protocol}//www.${originUrl.hostname}${originUrl.port ? `:${originUrl.port}` : ""}`;
 if (production && (!process.env.APP_URL?.startsWith("https://") || !databaseReady() || !mailReady() || !process.env.ADMIN_EMAILS))
   throw new Error(
     "Production requires HTTPS APP_URL, DATABASE_URL, SMTP settings and ADMIN_EMAILS."
@@ -619,21 +621,30 @@ app.use("/api", (q, s, next) => {
   s.set("Cache-Control", "no-store");
   if (!["GET", "HEAD", "OPTIONS"].includes(q.method)) {
     const reqOrigin = q.get("Origin");
+    const host = q.get("x-forwarded-host") || q.get("host");
+    const hostOrigin = host ? `https://${host}` : "";
     const allowedOrigins = /* @__PURE__ */ new Set([
       origin,
+      altOrigin,
+      ...hostOrigin ? [hostOrigin, `http://${host}`] : [],
       "http://localhost:5173",
       "http://127.0.0.1:5173",
       `http://localhost:${process.env.PORT || 8140}`,
       `http://127.0.0.1:${process.env.PORT || 8140}`
     ]);
-    if (!production) {
-      if (reqOrigin && !allowedOrigins.has(reqOrigin)) {
+    let effectiveOrigin = reqOrigin;
+    if (!effectiveOrigin && q.get("Referer")) {
+      try {
+        effectiveOrigin = new URL(q.get("Referer")).origin;
+      } catch {
+      }
+    }
+    if (effectiveOrigin) {
+      if (!allowedOrigins.has(effectiveOrigin)) {
         return s.status(403).json({ error: "Request origin rejected" });
       }
-    } else {
-      if (reqOrigin !== origin) {
-        return s.status(403).json({ error: "Request origin rejected" });
-      }
+    } else if (production && q.get("sec-fetch-site") === "cross-site") {
+      return s.status(403).json({ error: "Request origin rejected" });
     }
   }
   next();
