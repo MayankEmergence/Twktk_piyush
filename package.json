@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "concurrently \"tsx watch server/app.ts\" \"vite --host 127.0.0.1\"",
-    "build": "tsc --noEmit && vite build && node -e \"const fs=require('fs'); fs.cpSync('assets', 'dist/assets', {recursive:true});\"",
+    "build:server": "esbuild server/vercel-entry.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
+    "build": "npm run build:server && tsc --noEmit && vite build && node -e \"const fs=require('fs'); fs.cpSync('assets', 'dist/assets', {recursive:true});\"",
     "start": "tsx server/app.ts",
     "start:hostinger": "tsx server/start.ts",
     "migrate": "tsx server/migrate.ts",
@@ -46,6 +47,7 @@
     "@vercel/node": "^24.0.2",
     "@vitejs/plugin-react": "^5.0.4",
     "concurrently": "^9.2.1",
+    "esbuild": "^0.25.0",
     "prettier": "^3.9.10",
     "typescript": "^5.9.3",
     "vite": "^7.1.9"
