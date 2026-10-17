@@ -161,8 +161,8 @@ function Login({
     e.preventDefault();
     setMessage("");
     if (!loginToken && mode === "signup") {
-      if (password.length < 15 || password.length > 128)
-        return setMessage("Use a password with 15–128 characters.");
+      if (password.length < 8 || password.length > 128)
+        return setMessage("Use a password with 8–128 characters.");
       if (password !== repeatPassword)
         return setMessage("The two passwords must match.");
       if (!acceptTerms)
@@ -309,7 +309,7 @@ function Login({
                   ? "new-password"
                   : "current-password"
               }
-              minLength={mode === "signup" || verifySignup ? 15 : 1}
+              minLength={mode === "signup" || verifySignup ? 8 : 1}
               maxLength={128}
               required
               value={password}
@@ -320,7 +320,7 @@ function Login({
             />
             {(mode === "signup" || verifySignup) && (
               <small className="muted">
-                15–128 characters. Spaces and passphrases are welcome.
+                8–128 characters. Spaces and passphrases are welcome.
               </small>
             )}
           </label>
@@ -331,7 +331,7 @@ function Login({
             <input
               type="password"
               autoComplete="new-password"
-              minLength={15}
+              minLength={8}
               maxLength={128}
               required
               value={repeatPassword}

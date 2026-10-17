@@ -418,7 +418,7 @@ app.post("/api/auth/signup", authLimit, async (q, s) => {
   const b = z
     .object({
       email: z.email().max(254),
-      password: z.string().min(15).max(128),
+      password: z.string().min(8).max(128),
       repeatPassword: z.string().max(128),
       remember: z.boolean(),
       acceptTerms: z.literal(true),
@@ -509,7 +509,7 @@ app.post("/api/auth/consume", authLimit, async (q, s) => {
     }
     if (
       row.password_hash &&
-      (!z.string().min(15).max(128).safeParse(q.body.password).success ||
+      (!z.string().min(8).max(128).safeParse(q.body.password).success ||
         !(await verifyPassword(q.body.password, row.password_hash)))
     ) {
       await client.query("ROLLBACK");

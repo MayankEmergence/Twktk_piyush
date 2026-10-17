@@ -790,7 +790,7 @@ app.post("/api/auth/request", authLimit, async (q, s) => {
 app.post("/api/auth/signup", authLimit, async (q, s) => {
   const b = z3.object({
     email: z3.email().max(254),
-    password: z3.string().min(15).max(128),
+    password: z3.string().min(8).max(128),
     repeatPassword: z3.string().max(128),
     remember: z3.boolean(),
     acceptTerms: z3.literal(true),
@@ -858,7 +858,7 @@ app.post("/api/auth/consume", authLimit, async (q, s) => {
       await client.query("ROLLBACK");
       return s.status(401).json({ error: "This sign-in link has expired or already been used." });
     }
-    if (row.password_hash && (!z3.string().min(15).max(128).safeParse(q.body.password).success || !await verifyPassword(q.body.password, row.password_hash))) {
+    if (row.password_hash && (!z3.string().min(8).max(128).safeParse(q.body.password).success || !await verifyPassword(q.body.password, row.password_hash))) {
       await client.query("ROLLBACK");
       return s.status(401).json({
         error: "Enter the password you chose during signup to confirm your account."
