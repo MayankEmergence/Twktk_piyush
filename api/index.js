@@ -3,9 +3,9 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { randomUUID as randomUUID3, randomBytes as randomBytes3, createHash as createHash2 } from "node:crypto";
-import path2 from "node:path";
-import { fileURLToPath as fileURLToPath2 } from "node:url";
-import { existsSync as existsSync2 } from "node:fs";
+import path3 from "node:path";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
+import { existsSync as existsSync3 } from "node:fs";
 import { z as z3 } from "zod";
 
 // server/db.ts
@@ -138,6 +138,412 @@ function capturedPaymentMatches(payment, order) {
 // server/mail.ts
 import nodemailer from "nodemailer";
 import { randomUUID } from "node:crypto";
+import path2 from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
+import { existsSync as existsSync2 } from "node:fs";
+
+// server/email-templates.ts
+function renderLoginEmailHtml({ email, link, origin: origin2 }) {
+  const isSignup = link.includes("verify=signup");
+  const logoUrl = `${origin2}/assets/brand/logo.png`;
+  const badgeTitle = isSignup ? "REGISTRATION // EMAIL VERIFICATION" : "AUTHENTICATION // SECURE ACCESS";
+  const mainTitle = isSignup ? "VERIFY YOUR ACCOUNT" : "ENTER YOUR WORLD";
+  const subtitle = isSignup ? "Confirm your email address and activate your festival pass access." : "Your private access link to the TWKTK universe is ready.";
+  const buttonText = isSignup ? "CONFIRM & ENTER WORLD \u2192" : "ACCESS YOUR ACCOUNT \u2192";
+  const plainText = `${mainTitle}
+
+Those Who Know They Know
+
+${subtitle}
+
+Access Link:
+${link}
+
+This link expires in 15 minutes and can only be used once.
+If you did not request this, you can safely ignore this email.
+
+TWKTK Festival \xB7 Emergence Network \xB7 19.0760\xB0N, 72.8777\xB0E`;
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${mainTitle}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    table {border-collapse:collapse;border-spacing:0;margin:0;}
+    div, td {padding:0;}
+    div {margin:0 !important;}
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#060608;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'IBM Plex Mono',monospace;line-height:1.6;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#060608;width:100%;table-layout:fixed;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <!-- MAIN CONTAINER -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;background-color:#0b0b12;border:1px solid #1f1f2e;border-radius:12px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.8);">
+          
+          <!-- TOP ACCENT BAR -->
+          <tr>
+            <td style="height:4px;background:linear-gradient(90deg, #d81f26 0%, #ff3b41 50%, #e2a348 100%);font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- HEADER / LOGO -->
+          <tr>
+            <td align="center" style="padding:36px 30px 24px 30px;background-color:#0b0b12;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <img src="cid:twktk-logo" onerror="this.onerror=null;this.src='${logoUrl}';" alt="TWKTK" width="56" height="56" style="display:block;border:0;width:56px;height:56px;border-radius:50%;border:1px solid #ff3b41;background-color:#050507;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top:16px;">
+                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:15px;letter-spacing:3px;color:#ffffff;text-transform:uppercase;">THOSE WHO KNOW</div>
+                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:5px;color:#ff3b41;text-transform:uppercase;margin-top:2px;">THEY KNOW</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- PROTOCOL BADGE -->
+          <tr>
+            <td align="center" style="padding:0 30px 20px 30px;">
+              <div style="display:inline-block;padding:6px 14px;background-color:rgba(216,31,38,0.12);border:1px solid rgba(255,59,65,0.3);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;color:#ff3b41;text-transform:uppercase;">
+                ${badgeTitle}
+              </div>
+            </td>
+          </tr>
+
+          <!-- CONTENT BODY -->
+          <tr>
+            <td style="padding:0 36px 36px 36px;text-align:center;">
+              <h1 style="margin:0 0 12px 0;font-family:'Syncopate',Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;">
+                ${mainTitle}
+              </h1>
+              <p style="margin:0 0 28px 0;font-size:14px;color:#9ca3af;line-height:1.7;">
+                ${subtitle}
+              </p>
+
+              <!-- CTA BUTTON -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0 32px 0;">
+                <tr>
+                  <td align="center">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${link}" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="12%" stroke="f" fillcolor="#d81f26">
+                      <w:anchorlock/>
+                      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;letter-spacing:2px;">${buttonText}</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-- -->
+                    <a href="${link}" target="_blank" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #d81f26 0%, #ff3b41 100%);color:#ffffff;font-family:'Syncopate',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-decoration:none;border-radius:6px;text-transform:uppercase;box-shadow:0 8px 24px rgba(216,31,38,0.4);">
+                      ${buttonText}
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+
+              <!-- SECURITY NOTICE BOX -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0f0f18;border:1px solid #1f1f2e;border-radius:8px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:16px 20px;text-align:left;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="20" valign="top" style="padding-right:12px;font-size:14px;color:#ff3b41;">\u{1F512}</td>
+                        <td style="font-size:12px;color:#9ca3af;line-height:1.6;">
+                          <strong style="color:#ffffff;">Security Notice:</strong> This link is valid for <span style="color:#ff3b41;font-weight:600;">15 minutes</span> and operates once. Never forward or share this email. If you did not initiate this request, your account remains secure and no action is necessary.
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- FALLBACK LINK BOX -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px dashed #1f1f2e;padding-top:20px;">
+                <tr>
+                  <td style="text-align:left;">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Direct Access URL</div>
+                    <div style="background-color:#07070a;border:1px solid #1a1a26;border-radius:6px;padding:12px;word-break:break-all;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9ca3af;line-height:1.5;">
+                      <a href="${link}" target="_blank" style="color:#e2a348;text-decoration:none;">${link}</a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background-color:#07070c;padding:24px 30px;border-top:1px solid #161622;text-align:center;">
+              <div style="font-family:'Syncopate',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-transform:uppercase;">
+                TWKTK FESTIVAL \xB7 WORLDLINE
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;margin-top:6px;">
+                19.0760\xB0N \xB7 72.8777\xB0E \xB7 EMERGENCE NETWORK
+              </div>
+              <div style="font-size:11px;color:#4b5563;margin-top:12px;">
+                You received this email because an action was performed for <span style="color:#9ca3af;">${email}</span>.
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  return { html, text: plainText };
+}
+function renderTicketEmailHtml(params) {
+  const {
+    email,
+    eventTitle,
+    city,
+    venue,
+    startsAt,
+    category,
+    totalGuests,
+    amount,
+    orderId,
+    ticketIds,
+    accountUrl,
+    origin: origin2
+  } = params;
+  const logoUrl = `${origin2}/assets/brand/logo.png`;
+  const formattedDate = new Date(startsAt).toLocaleString("en-IN", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata"
+  });
+  const formattedAmount = (amount / 100).toLocaleString("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0
+  });
+  const plainText = `CONFIRMED FESTIVAL PASS // TWKTK
+
+Your tickets are confirmed.
+
+Event: ${eventTitle} (${city})
+Date & Time: ${formattedDate} IST
+Venue: ${venue}
+Category: ${category}
+Admissions: ${totalGuests} Guests
+Payment: ${formattedAmount}
+Booking ID: ${orderId}
+
+Ticket Pass IDs:
+${ticketIds.join("\n")}
+
+View and manage your tickets:
+${accountUrl}
+
+Important: Bring this ticket confirmation and a valid government photo ID for entry at the gate. Keep your ticket IDs private.
+
+TWKTK Festival \xB7 Emergence Network \xB7 19.0760\xB0N, 72.8777\xB0E`;
+  const ticketRows = ticketIds.map(
+    (id, idx) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background-color:#0a0a10;border:1px solid #1c1c2a;border-radius:4px;margin-bottom:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+        <span style="color:#ff3b41;font-weight:600;">PASS #${idx + 1}</span>
+        <span style="color:#ffffff;letter-spacing:1px;">${id}</span>
+      </div>`
+  ).join("");
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Your TWKTK Tickets are Confirmed</title>
+</head>
+<body style="margin:0;padding:0;background-color:#060608;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'IBM Plex Mono',monospace;line-height:1.6;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#060608;width:100%;table-layout:fixed;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;background-color:#0b0b12;border:1px solid #1f1f2e;border-radius:12px;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,0.85);">
+          
+          <!-- TOP ACCENT BAR -->
+          <tr>
+            <td style="height:4px;background:linear-gradient(90deg, #d81f26 0%, #ff3b41 50%, #e2a348 100%);font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- HEADER / BRAND -->
+          <tr>
+            <td align="center" style="padding:32px 30px 20px 30px;background-color:#0b0b12;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <img src="cid:twktk-logo" onerror="this.onerror=null;this.src='${logoUrl}';" alt="TWKTK" width="56" height="56" style="display:block;border:0;width:56px;height:56px;border-radius:50%;border:1px solid #ff3b41;background-color:#050507;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top:14px;">
+                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:3px;color:#ffffff;text-transform:uppercase;">THOSE WHO KNOW</div>
+                    <div style="font-family:'Syncopate',Arial,sans-serif;font-weight:700;font-size:11px;letter-spacing:5px;color:#ff3b41;text-transform:uppercase;margin-top:2px;">THEY KNOW</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- STATUS BADGE -->
+          <tr>
+            <td align="center" style="padding:0 30px 16px 30px;">
+              <div style="display:inline-block;padding:6px 16px;background-color:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;color:#10b981;text-transform:uppercase;">
+                \u2713 FESTIVAL PASS CONFIRMED \xB7 PAYMENT RECEIVED
+              </div>
+            </td>
+          </tr>
+
+          <!-- HERO TITLE -->
+          <tr>
+            <td style="padding:0 36px 24px 36px;text-align:center;">
+              <h1 style="margin:0 0 6px 0;font-family:'Syncopate',Arial,sans-serif;font-size:24px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;">
+                ${eventTitle}
+              </h1>
+              <div style="font-family:'Syncopate',Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#e2a348;text-transform:uppercase;">
+                ${city} \xB7 OFFICIAL ADMISSION
+              </div>
+            </td>
+          </tr>
+
+          <!-- TICKET BOARDING PASS CARD -->
+          <tr>
+            <td style="padding:0 30px 30px 30px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0f0f18;border:1px solid #28283c;border-radius:10px;overflow:hidden;">
+                <!-- TICKET HEADER -->
+                <tr>
+                  <td style="background-color:#151522;padding:14px 20px;border-bottom:1px solid #28283c;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:2px;text-transform:uppercase;">
+                          PASS TIER
+                        </td>
+                        <td align="right">
+                          <span style="display:inline-block;padding:4px 10px;background-color:#d81f26;color:#ffffff;font-family:'Syncopate',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;border-radius:4px;text-transform:uppercase;">
+                            ${category}
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- DETAILS GRID -->
+                <tr>
+                  <td style="padding:20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-bottom:16px;">
+                          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">DATE & TIME</div>
+                          <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">${formattedDate} IST</div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:16px;">
+                          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">VENUE</div>
+                          <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">${venue}</div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td width="50%" style="padding-right:10px;">
+                                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">GUEST ADMISSIONS</div>
+                                <div style="font-size:16px;color:#ffffff;font-weight:700;margin-top:2px;">${totalGuests} Guests</div>
+                              </td>
+                              <td width="50%">
+                                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">AMOUNT PAID</div>
+                                <div style="font-size:16px;color:#10b981;font-weight:700;margin-top:2px;">${formattedAmount}</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- PERFORATION TEAR LINE -->
+                <tr>
+                  <td style="padding:0 12px;">
+                    <div style="border-top:1px dashed #2d2d42;height:1px;font-size:0;line-height:0;">&nbsp;</div>
+                  </td>
+                </tr>
+
+                <!-- TICKET IDS -->
+                <tr>
+                  <td style="padding:20px;background-color:#0d0d14;">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">
+                      BOOKING REFERENCE: <span style="color:#e2a348;">${orderId}</span>
+                    </div>
+                    ${ticketRows}
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA BUTTON -->
+          <tr>
+            <td align="center" style="padding:0 36px 28px 36px;">
+              <a href="${accountUrl}" target="_blank" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #d81f26 0%, #ff3b41 100%);color:#ffffff;font-family:'Syncopate',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-decoration:none;border-radius:6px;text-transform:uppercase;box-shadow:0 8px 24px rgba(216,31,38,0.4);">
+                VIEW PASSES IN MY ACCOUNT \u2192
+              </a>
+            </td>
+          </tr>
+
+          <!-- GATE RULES NOTICE -->
+          <tr>
+            <td style="padding:0 36px 30px 36px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a10;border-left:3px solid #e2a348;border-radius:4px;padding:12px 16px;">
+                <tr>
+                  <td style="font-size:12px;color:#9ca3af;line-height:1.6;">
+                    <strong style="color:#ffffff;">Gate Admission Protocol:</strong> Present this email or your passes from the portal along with a matching government-issued photo ID at entry. Keep all ticket IDs confidential.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background-color:#07070c;padding:24px 30px;border-top:1px solid #161622;text-align:center;">
+              <div style="font-family:'Syncopate',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-transform:uppercase;">
+                TWKTK FESTIVAL \xB7 WORLDLINE
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;letter-spacing:1px;margin-top:6px;">
+                19.0760\xB0N \xB7 72.8777\xB0E \xB7 EMERGENCE NETWORK
+              </div>
+              <div style="font-size:11px;color:#4b5563;margin-top:12px;">
+                Issued to <span style="color:#9ca3af;">${email}</span> for Booking <span style="color:#9ca3af;">${orderId}</span>.
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  return { html, text: plainText };
+}
+
+// server/mail.ts
+var logoPath = path2.resolve(
+  path2.dirname(fileURLToPath2(import.meta.url)),
+  "../assets/brand/logo.png"
+);
 var hasSmtpConfig = () => Boolean(
   process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.MAIL_FROM
 );
@@ -154,28 +560,38 @@ var transport = () => nodemailer.createTransport({
   socketTimeout: 15e3
 });
 async function sendLogin(email, link) {
+  const origin2 = process.env.APP_URL || "https://www.thosewhoknowtheyknow.com";
+  const { html, text } = renderLoginEmailHtml({ email, link, origin: origin2 });
+  const isSignup = link.includes("verify=signup");
+  const subject = isSignup ? "Verify your TWKTK account" : "Your TWKTK sign-in link";
+  const attachments = existsSync2(logoPath) ? [
+    {
+      filename: "logo.png",
+      path: logoPath,
+      cid: "twktk-logo"
+    }
+  ] : void 0;
   if (hasSmtpConfig()) {
     await transport().sendMail({
       from: process.env.MAIL_FROM,
       to: email,
-      subject: "Your TWKTK sign-in link",
-      text: `Enter your world.
-
-${link}
-
-This link expires in 15 minutes and works once. If you did not request it, ignore this email.`
+      subject,
+      text,
+      html,
+      attachments
     });
   } else {
     console.log("\n========================================================");
-    console.log(`\u2709\uFE0F  [DEV EMAIL] Sign-in link for ${email}:`);
+    console.log(`\u2709\uFE0F  [DEV EMAIL] ${subject} for ${email}:`);
     console.log(`\u{1F517}  ${link}`);
     console.log("========================================================\n");
   }
 }
-async function queueMail(client, email, subject, body) {
+async function queueMail(client, email, subject, body, html) {
+  const payload = html ? JSON.stringify({ text: body, html }) : body;
   await client.query(
     "INSERT INTO email_queue(id,recipient,subject,body) VALUES($1,$2,$3,$4)",
-    [randomUUID(), email, subject, body]
+    [randomUUID(), email, subject, payload]
   );
 }
 async function flushMail() {
@@ -188,18 +604,39 @@ async function flushMail() {
     );
     for (const row of rows) {
       try {
+        let textBody = row.body;
+        let htmlBody = void 0;
+        try {
+          if (row.body.startsWith("{") && row.body.endsWith("}")) {
+            const parsed = JSON.parse(row.body);
+            if (parsed.text || parsed.html) {
+              textBody = parsed.text || row.body;
+              htmlBody = parsed.html;
+            }
+          }
+        } catch {
+        }
+        const attachments = existsSync2(logoPath) ? [
+          {
+            filename: "logo.png",
+            path: logoPath,
+            cid: "twktk-logo"
+          }
+        ] : void 0;
         if (hasSmtpConfig()) {
           await transport().sendMail({
             from: process.env.MAIL_FROM,
             to: row.recipient,
             subject: row.subject,
-            text: row.body
+            text: textBody,
+            html: htmlBody,
+            attachments
           });
         } else {
           console.log("\n========================================================");
           console.log(`\u2709\uFE0F  [DEV TICKET EMAIL] To: ${row.recipient}`);
           console.log(`\u{1F4CB}  Subject: ${row.subject}`);
-          console.log(row.body);
+          console.log(textBody);
           console.log("========================================================\n");
         }
         await client.query("UPDATE email_queue SET sent_at=now() WHERE id=$1", [
@@ -436,11 +873,11 @@ async function verifyPassword(password, stored) {
 
 // server/app.ts
 var app = express();
-var root = path2.resolve(path2.dirname(fileURLToPath2(import.meta.url)), "..");
+var root = path3.resolve(path3.dirname(fileURLToPath3(import.meta.url)), "..");
 try {
   if (typeof process.loadEnvFile === "function") {
-    const envFile = path2.resolve(root, ".env");
-    if (existsSync2(envFile)) process.loadEnvFile(envFile);
+    const envFile = path3.resolve(root, ".env");
+    if (existsSync3(envFile)) process.loadEnvFile(envFile);
   }
 } catch {
 }
@@ -559,23 +996,28 @@ async function finalize(orderId, paymentId) {
         "SELECT e.title,e.city,e.venue,e.starts_at,coalesce(t.name,'GENERAL ACCESS') AS category FROM events e LEFT JOIN ticket_types t ON t.id=$2 WHERE e.id=$1",
         [order.event_id, order.ticket_type_id]
       )).rows[0];
+      const { html, text } = renderTicketEmailHtml({
+        email: user.email,
+        eventTitle: event.title,
+        city: event.city,
+        venue: event.venue,
+        startsAt: event.starts_at,
+        category: event.category,
+        quantity: order.quantity,
+        admissions: order.admissions,
+        totalGuests: order.quantity * order.admissions,
+        amount: order.amount,
+        orderId: order.id,
+        ticketIds: ids,
+        accountUrl: `${origin}/account`,
+        origin
+      });
       await queueMail(
         client,
         user.email,
-        "Your TWKTK tickets are confirmed",
-        `Your TWKTK tickets are confirmed.
-
-${event.title} / ${event.city}
-${new Date(event.starts_at).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST
-Venue: ${event.venue}
-Category: ${event.category}
-Guest tickets: ${order.quantity * order.admissions}
-Payment confirmed: INR ${(order.amount / 100).toFixed(2)}
-
-Booking: ${order.id}
-Ticket IDs: ${ids.join(", ")}
-View your tickets: ${origin}/account
-Bring your ticket and photo ID. Keep these IDs private.`
+        `Your TWKTK tickets are confirmed \xB7 ${event.city.toUpperCase()}`,
+        text,
+        html
       );
     }
     await client.query("COMMIT");
@@ -1399,25 +1841,25 @@ app.use(
 );
 app.get(
   "/assets/models/player-web.glb",
-  (_q, s) => s.sendFile(path2.join(root, "assets/models/player-web.glb"))
+  (_q, s) => s.sendFile(path3.join(root, "assets/models/player-web.glb"))
 );
 for (const folder of ["brand", "images", "audio"])
   app.use(
     `/assets/${folder}`,
-    express.static(path2.join(root, "assets", folder), {
+    express.static(path3.join(root, "assets", folder), {
       dotfiles: "deny",
       maxAge: "1d",
       index: false
     })
   );
 app.use(
-  express.static(path2.join(root, "dist"), { dotfiles: "deny", index: false })
+  express.static(path3.join(root, "dist"), { dotfiles: "deny", index: false })
 );
 app.get(
   ["/world", "/world.html"],
-  (_q, s) => s.sendFile(path2.join(root, "dist/index.html"))
+  (_q, s) => s.sendFile(path3.join(root, "dist/index.html"))
 );
-app.get("/", (_q, s) => s.sendFile(path2.join(root, "dist/index.html")));
+app.get("/", (_q, s) => s.sendFile(path3.join(root, "dist/index.html")));
 app.get(
   "/admin",
   (_q, s, next) => {
@@ -1426,12 +1868,12 @@ app.get(
   },
   auth,
   admin,
-  (_q, s) => s.sendFile(path2.join(root, "dist/portal.html"))
+  (_q, s) => s.sendFile(path3.join(root, "dist/portal.html"))
 );
 if (!production && ["localhost", "127.0.0.1", "[::1]"].includes(new URL(origin).hostname)) {
   app.get(
     "/admin-preview",
-    (_q, s) => s.sendFile(path2.join(root, "dist/portal.html"))
+    (_q, s) => s.sendFile(path3.join(root, "dist/portal.html"))
   );
 }
 app.get(
@@ -1445,7 +1887,7 @@ app.get(
     "/terms",
     "/refunds"
   ],
-  (_q, s) => s.sendFile(path2.join(root, "dist/portal.html"))
+  (_q, s) => s.sendFile(path3.join(root, "dist/portal.html"))
 );
 app.use((err, _q, s, _next) => {
   if (err instanceof z3.ZodError)

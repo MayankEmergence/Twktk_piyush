@@ -1,6 +1,15 @@
 import nodemailer from "nodemailer";
 import { randomUUID } from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import { pool } from "./db";
+import { renderLoginEmailHtml } from "./email-templates";
+
+const logoPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../assets/brand/logo.png",
+);
 
 export const hasSmtpConfig = () =>
   Boolean(
@@ -29,16 +38,33 @@ const transport = () =>
   });
 
 export async function sendLogin(email: string, link: string) {
+  const origin = process.env.APP_URL || "https://www.thosewhoknowtheyknow.com";
+  const { html, text } = renderLoginEmailHtml({ email, link, origin });
+  const isSignup = link.includes("verify=signup");
+  const subject = isSignup ? "Verify your TWKTK account" : "Your TWKTK sign-in link";
+
+  const attachments = existsSync(logoPath)
+    ? [
+        {
+          filename: "logo.png",
+          path: logoPath,
+          cid: "twktk-logo",
+        },
+      ]
+    : undefined;
+
   if (hasSmtpConfig()) {
     await transport().sendMail({
       from: process.env.MAIL_FROM,
       to: email,
-      subject: "Your TWKTK sign-in link",
-      text: `Enter your world.\n\n${link}\n\nThis link expires in 15 minutes and works once. If you did not request it, ignore this email.`,
+      subject,
+      text,
+      html,
+      attachments,
     });
   } else {
     console.log("\n========================================================");
-    console.log(`✉️  [DEV EMAIL] Sign-in link for ${email}:`);
+    console.log(`✉️  [DEV EMAIL] ${subject} for ${email}:`);
     console.log(`🔗  ${link}`);
     console.log("========================================================\n");
   }
@@ -49,10 +75,12 @@ export async function queueMail(
   email: string,
   subject: string,
   body: string,
+  html?: string,
 ) {
+  const payload = html ? JSON.stringify({ text: body, html }) : body;
   await client.query(
     "INSERT INTO email_queue(id,recipient,subject,body) VALUES($1,$2,$3,$4)",
-    [randomUUID(), email, subject, body],
+    [randomUUID(), email, subject, payload],
   );
 }
 
@@ -66,18 +94,42 @@ export async function flushMail() {
     );
     for (const row of rows) {
       try {
+        let textBody = row.body;
+        let htmlBody: string | undefined = undefined;
+        try {
+          if (row.body.startsWith("{") && row.body.endsWith("}")) {
+            const parsed = JSON.parse(row.body);
+            if (parsed.text || parsed.html) {
+              textBody = parsed.text || row.body;
+              htmlBody = parsed.html;
+            }
+          }
+        } catch {}
+
+        const attachments = existsSync(logoPath)
+          ? [
+              {
+                filename: "logo.png",
+                path: logoPath,
+                cid: "twktk-logo",
+              },
+            ]
+          : undefined;
+
         if (hasSmtpConfig()) {
           await transport().sendMail({
             from: process.env.MAIL_FROM,
             to: row.recipient,
             subject: row.subject,
-            text: row.body,
+            text: textBody,
+            html: htmlBody,
+            attachments,
           });
         } else {
           console.log("\n========================================================");
           console.log(`✉️  [DEV TICKET EMAIL] To: ${row.recipient}`);
           console.log(`📋  Subject: ${row.subject}`);
-          console.log(row.body);
+          console.log(textBody);
           console.log("========================================================\n");
         }
         await client.query("UPDATE email_queue SET sent_at=now() WHERE id=$1", [

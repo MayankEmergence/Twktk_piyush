@@ -18,6 +18,7 @@ import {
   capturedPaymentMatches,
 } from "./security";
 import { mailReady, sendLogin, queueMail, flushMail } from "./mail";
+import { renderTicketEmailHtml } from "./email-templates";
 import ExcelJS from "exceljs";
 import { addExportSheet } from "./export";
 import compression from "compression";
@@ -174,11 +175,28 @@ async function finalize(orderId: string, paymentId: string) {
           [order.event_id, order.ticket_type_id],
         )
       ).rows[0];
+      const { html, text } = renderTicketEmailHtml({
+        email: user.email,
+        eventTitle: event.title,
+        city: event.city,
+        venue: event.venue,
+        startsAt: event.starts_at,
+        category: event.category,
+        quantity: order.quantity,
+        admissions: order.admissions,
+        totalGuests: order.quantity * order.admissions,
+        amount: order.amount,
+        orderId: order.id,
+        ticketIds: ids,
+        accountUrl: `${origin}/account`,
+        origin,
+      });
       await queueMail(
         client,
         user.email,
-        "Your TWKTK tickets are confirmed",
-        `Your TWKTK tickets are confirmed.\n\n${event.title} / ${event.city}\n${new Date(event.starts_at).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST\nVenue: ${event.venue}\nCategory: ${event.category}\nGuest tickets: ${order.quantity * order.admissions}\nPayment confirmed: INR ${(order.amount / 100).toFixed(2)}\n\nBooking: ${order.id}\nTicket IDs: ${ids.join(", ")}\nView your tickets: ${origin}/account\nBring your ticket and photo ID. Keep these IDs private.`,
+        `Your TWKTK tickets are confirmed · ${event.city.toUpperCase()}`,
+        text,
+        html,
       );
     }
     await client.query("COMMIT");
