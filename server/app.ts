@@ -440,7 +440,7 @@ app.post("/api/auth/request", authLimit, async (q, s) => {
   }
   await sendLogin(
     email,
-    `${origin}/login?return=${encodeURIComponent(returnTo)}#token=${t}`,
+    `${origin}/login?token=${t}&return=${encodeURIComponent(returnTo)}`,
   );
   s.json({ ok: true });
 });
@@ -474,7 +474,7 @@ app.post("/api/auth/signup", authLimit, async (q, s) => {
   );
   await sendLogin(
     b.email.toLowerCase(),
-    `${origin}/login?verify=signup&return=${encodeURIComponent(safeReturn(b.returnTo, origin))}#token=${t}`,
+    `${origin}/login?token=${t}&verify=signup&return=${encodeURIComponent(safeReturn(b.returnTo, origin))}`,
   );
   s.json({ ok: true });
 });
@@ -535,19 +535,23 @@ app.post("/api/auth/consume", authLimit, async (q, s) => {
       await client.query("ROLLBACK");
       return s
         .status(401)
-        .json({ error: "This sign-in link has expired or already been used." });
+        .json({
+          error:
+            "This sign-in link has expired or already been used. If you have already verified, please log in with your email and password.",
+        });
     }
     if (
       row.password_hash &&
-      (!z.string().min(8).max(128).safeParse(q.body.password).success ||
-        !(await verifyPassword(q.body.password, row.password_hash)))
+      q.body.password &&
+      typeof q.body.password === "string" &&
+      !(await verifyPassword(q.body.password, row.password_hash))
     ) {
       await client.query("ROLLBACK");
       return s
         .status(401)
         .json({
           error:
-            "Enter the password you chose during signup to confirm your account.",
+            "The password you entered does not match the password chosen during signup.",
         });
     }
     const st = await createSession(client, row.email, "", {

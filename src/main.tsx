@@ -148,12 +148,20 @@ function Login({
         : "",
     ),
     [busy, setBusy] = useState(false),
-    [loginToken] = useState(() =>
-      new URLSearchParams(location.hash.slice(1)).get("token"),
-    );
+    [loginToken] = useState(() => {
+      const searchParams = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.slice(1));
+      return searchParams.get("token") || hashParams.get("token");
+    });
   useEffect(() => {
-    if (loginToken)
-      history.replaceState({}, "", location.pathname + location.search);
+    if (loginToken) {
+      try {
+        const cleanUrl = new URL(location.href);
+        cleanUrl.searchParams.delete("token");
+        cleanUrl.hash = "";
+        history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search);
+      } catch {}
+    }
   }, [loginToken]);
   const verifySignup =
     new URLSearchParams(location.search).get("verify") === "signup";
@@ -173,7 +181,7 @@ function Login({
       if (loginToken) {
         await api("/auth/consume", "POST", {
           token: loginToken,
-          ...(verifySignup ? { password } : {}),
+          ...(password ? { password } : {}),
         });
         onSignedIn();
       } else {
@@ -187,7 +195,7 @@ function Login({
             returnTo,
           });
           setMessage(
-            "Check your email to verify your account. You’ll confirm with the password you chose here.",
+            "Check your email to verify your account. Once confirmed, you can step into the world.",
           );
         } else if (emailLink) {
           await api("/auth/request", "POST", { email, returnTo, remember });
@@ -216,7 +224,11 @@ function Login({
       <form onSubmit={submit} className="auth-form">
         <span className="eyebrow">WELCOME TO THE INNER CIRCLE</span>
         <h1>
-          {mode === "signup" ? "Join the inner circle." : "Welcome back."}
+          {loginToken && verifySignup
+            ? "Confirm your account."
+            : mode === "signup"
+              ? "Join the inner circle."
+              : "Welcome back."}
         </h1>
         {!loginToken && (
           <>
@@ -277,7 +289,9 @@ function Login({
         )}
         <p>
           {loginToken
-            ? "Your private link is ready. Confirm below to sign in."
+            ? verifySignup
+              ? "Your account email is verified. Confirm below to step into the world."
+              : "Your private link is ready. Confirm below to sign in."
             : mode === "signup"
               ? "Create your account. Verify your email, then step into the world."
               : emailLink
@@ -298,18 +312,15 @@ function Login({
             />
           </label>
         )}
-        {((!loginToken && (mode === "signup" || !emailLink)) ||
-          (loginToken && verifySignup)) && (
+        {!loginToken && (mode === "signup" || !emailLink) && (
           <label>
             Password
             <input
               type="password"
               autoComplete={
-                mode === "signup" || verifySignup
-                  ? "new-password"
-                  : "current-password"
+                mode === "signup" ? "new-password" : "current-password"
               }
-              minLength={mode === "signup" || verifySignup ? 8 : 1}
+              minLength={mode === "signup" ? 8 : 1}
               maxLength={128}
               required
               value={password}
@@ -318,7 +329,7 @@ function Login({
                 mode === "signup" ? "Choose a password" : "Enter your password"
               }
             />
-            {(mode === "signup" || verifySignup) && (
+            {mode === "signup" && (
               <small className="muted">
                 8–128 characters. Spaces and passphrases are welcome.
               </small>
@@ -376,7 +387,9 @@ function Login({
           {busy
             ? "PLEASE WAIT…"
             : loginToken
-              ? "CONFIRM SIGN IN ↗"
+              ? verifySignup
+                ? "CONFIRM & ENTER ↗"
+                : "CONFIRM SIGN IN ↗"
               : mode === "signup"
                 ? "SIGN UP ↗"
                 : emailLink
@@ -387,6 +400,11 @@ function Login({
           <p className="notice" role="status">
             {message}
           </p>
+        )}
+        {loginToken && (
+          <a className="text-link auth-cancel" href="/login">
+            RETURN TO SIGN IN →
+          </a>
         )}
         {!loginToken && mode === "login" && (
           <button

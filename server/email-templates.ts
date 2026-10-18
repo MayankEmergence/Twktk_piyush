@@ -34,7 +34,7 @@ export function renderLoginEmailHtml({ email, link, origin }: LoginEmailParams):
   if (isSignup) {
     badge = "VERIFICATION";
     title = "Confirm Your Account";
-    subtitle = "Click below to confirm your email and set your access password. This link expires in 15 minutes.";
+    subtitle = "Click below to confirm your email and activate your TWKTK account. This link expires in 15 minutes.";
     buttonText = "Confirm Email →";
   } else if (isReset) {
     badge = "PASSWORD RESET";
